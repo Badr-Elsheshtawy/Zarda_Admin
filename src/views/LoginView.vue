@@ -12,7 +12,7 @@ const router = useRouter()
 const handleLogin = async () => {
   try {
     await signInWithEmailAndPassword(auth, email.value, password.value)
-    router.push('/') // تحويل للداشبورد بعد النجاح
+    router.push('/') 
   } catch (err) {
     error.value = 'بيانات الدخول غير صحيحة!'
   }

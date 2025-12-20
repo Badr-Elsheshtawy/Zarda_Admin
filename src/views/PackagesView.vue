@@ -4,9 +4,8 @@ import { db, auth, storage } from '../firebase'
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
 import { useAdminPackagesStore } from '@/stores/packages'
+import { CLOUD_NAME, UPLOAD_PRESET, UPLOAD_FOLDER } from '@/config/cloudinary'
 
-const CLOUD_NAME = 'dqk4pzwvr' 
-const UPLOAD_PRESET = 'zarda_uploads'
 
 const isLoggedIn = ref(false)
 const loginEmail = ref('')
@@ -125,11 +124,14 @@ const uploadImagesToCloudinary = async () => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('upload_preset', UPLOAD_PRESET)
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData })
-      const data = await res.json()
-      if (data.secure_url) uploadedUrls.push(data.secure_url)
-    } catch (error) { console.error('Upload Error:', error); throw error }
+    formData.append('folder', UPLOAD_FOLDER)
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData })
+    const data = await res.json()
+    if (!res.ok || !data.secure_url) {
+      const msg = data?.error?.message || 'فشل رفع الصورة إلى Cloudinary'
+      throw new Error(msg)
+    }
+    uploadedUrls.push(data.secure_url)
   }
   return uploadedUrls
 }

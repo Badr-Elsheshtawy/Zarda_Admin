@@ -49,7 +49,6 @@ export const useAdminPackagesStore = defineStore('adminPackages', () => {
         views: data.views ?? 0,
       }
       const refDoc = await addDoc(collection(db, 'packages'), payload)
-      // optimistic insert (without resolved serverTimestamp)
       items.value.unshift({ id: refDoc.id, ...data })
       return refDoc.id
     } catch (e) {
