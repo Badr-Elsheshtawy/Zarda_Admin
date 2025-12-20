@@ -18,6 +18,7 @@ const form = ref({
 })
 const imageFiles = ref([])
 const imageUrls = ref([])
+const primaryImageIndex = ref(0)
 const loading = ref(false)
 const message = ref('')
 const store = useAdminPackagesStore()
@@ -27,6 +28,7 @@ const editingId = ref(null)
 const editForm = ref({
   title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', isFeatured: false, active: true, image: ''
 })
+const primaryEditIndex = ref(0)
 
 const isAddOpen = ref(false)
 
@@ -111,11 +113,24 @@ const handleFileSelect = (event) => {
     imageFiles.value.push(file)
     imageUrls.value.push(URL.createObjectURL(file))
   })
+  if (imageUrls.value.length > 0 && (primaryImageIndex.value == null || primaryImageIndex.value < 0)) {
+    primaryImageIndex.value = 0
+  }
 }
 
 const removeImage = (index) => {
   imageFiles.value.splice(index, 1)
   imageUrls.value.splice(index, 1)
+  if (primaryImageIndex.value === index) {
+    primaryImageIndex.value = Math.max(0, primaryImageIndex.value - 1)
+  } else if (primaryImageIndex.value > index) {
+    primaryImageIndex.value = primaryImageIndex.value - 1
+  }
+  if (primaryEditIndex.value === index) {
+    primaryEditIndex.value = Math.max(0, primaryEditIndex.value - 1)
+  } else if (primaryEditIndex.value > index) {
+    primaryEditIndex.value = primaryEditIndex.value - 1
+  }
 }
 
 const uploadImagesToCloudinary = async () => {
@@ -147,7 +162,7 @@ const addPackage = async () => {
       ...form.value,
       price: Number(form.value.price),
       images: finalImageLinks,
-      image: finalImageLinks[0] || '',
+      image: finalImageLinks[primaryImageIndex.value] ?? finalImageLinks[0] ?? '',
       views: 0
     })
     message.value = '✅ تم النشر!'
@@ -191,6 +206,8 @@ const openEdit = (pkg) => {
   }
   imageFiles.value = []
   imageUrls.value = Array.isArray(pkg.images) && pkg.images.length ? [...pkg.images] : (pkg.image ? [pkg.image] : [])
+  const idx = imageUrls.value.findIndex(u => u === (pkg.image || ''))
+  primaryEditIndex.value = idx !== -1 ? idx : 0
 }
 
 const saveEdit = async () => {
@@ -209,7 +226,7 @@ const saveEdit = async () => {
       ...editForm.value,
       price: Number(editForm.value.price),
       images: finalImageLinks,
-      image: finalImageLinks[0] || editForm.value.image || ''
+      image: (finalImageLinks.length ? (finalImageLinks[primaryEditIndex.value] ?? finalImageLinks[0]) : (editForm.value.image || ''))
     })
 
     message.value = '✅ تم حفظ التعديلات!'
@@ -338,8 +355,10 @@ const closeAdd = () => {
                   <label class="cursor-pointer block text-blue-400 font-bold hover:underline">اضغط لاختيار الصور 📸<input type="file" multiple @change="handleFileSelect" class="hidden" accept="image/*"></label>
                   <div v-if="imageUrls.length" class="mt-4 grid grid-cols-4 gap-4">
                     <div v-for="(u,i) in imageUrls" :key="i" class="relative">
-                      <img :src="u || '/zarda_logo.png'" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-20 object-cover rounded">
+                      <img :src="u || '/zarda_logo.png'" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-20 object-cover rounded border" :class="primaryImageIndex === i ? 'border-blue-500 ring-2 ring-blue-300' : 'border-transparent'" @click="primaryImageIndex = i">
                       <button @click="removeImage(i)" class="absolute -top-2 -right-2 bg-red-500 w-5 h-5 rounded-full text-xs">✕</button>
+                      <span class="absolute bottom-1 left-1 text-xs px-2 py-0.5 rounded bg-blue-600" v-if="primaryImageIndex === i">أساسية</span>
+                      <button v-else class="absolute bottom-1 left-1 text-xs px-2 py-0.5 rounded bg-gray-700 hover:bg-gray-600" @click="primaryImageIndex = i">اجعلها أساسية</button>
                     </div>
                   </div>
                 </div>
@@ -412,8 +431,10 @@ const closeAdd = () => {
               <label class="cursor-pointer block text-blue-400 font-bold hover:underline">اضغط لاختيار صور جديدة 📸<input type="file" multiple @change="handleFileSelect" class="hidden" accept="image/*"></label>
               <div v-if="imageUrls.length" class="mt-4 grid grid-cols-4 gap-4">
                 <div v-for="(u,i) in imageUrls" :key="i" class="relative">
-                  <img :src="u" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-20 object-cover rounded">
+                  <img :src="u" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-20 object-cover rounded border" :class="primaryEditIndex === i ? 'border-blue-500 ring-2 ring-blue-300' : 'border-transparent'" @click="primaryEditIndex = i; editForm.image = u">
                   <button @click="removeImage(i)" class="absolute -top-2 -right-2 bg-red-500 w-5 h-5 rounded-full text-xs">✕</button>
+                  <span class="absolute bottom-1 left-1 text-xs px-2 py-0.5 rounded bg-blue-600" v-if="primaryEditIndex === i">أساسية</span>
+                  <button v-else class="absolute bottom-1 left-1 text-xs px-2 py-0.5 rounded bg-gray-700 hover:bg-gray-600" @click="primaryEditIndex = i; editForm.image = u">اجعلها أساسية</button>
                 </div>
               </div>
               <div v-else class="mt-2 text-sm text-gray-400">سيتم الاحتفاظ بالصور الحالية إن لم ترفع صوراً جديدة.</div>
