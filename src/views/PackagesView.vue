@@ -95,14 +95,13 @@ const handleLogout = async () => {
 }
 
 onMounted(() => {
+  isLoggedIn.value = !!auth.currentUser
+  checkingAuth.value = false
+  if (isLoggedIn.value) fetchPackages()
+
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      isLoggedIn.value = true
-      fetchPackages()
-    } else {
-      isLoggedIn.value = false
-    }
-    checkingAuth.value = false
+    isLoggedIn.value = !!user
+    if (isLoggedIn.value) fetchPackages()
   })
 })
 
@@ -160,7 +159,7 @@ const addPackage = async () => {
 const fetchPackages = async () => { await store.fetchAll({ force: true }) }
 
 const deletePackage = async (id) => {
-  if(!confirm('حذف؟')) return
+  if(!confirm('هل أنت متأكد من حذف العرض؟')) return
   await store.remove(id)
 }
 
@@ -358,7 +357,7 @@ const closeAdd = () => {
       </Transition>
 
       <div class="space-y-4 pb-20">
-        <div v-if="packagesList.length === 0" class="text-center text-gray-400 py-10 border border-dashed border-gray-700 rounded-lg">
+        <div v-if="displayedPackages.length === 0" class="text-center text-gray-400 py-10 border border-dashed border-gray-700 rounded-lg">
           لا توجد عروض منشورة بعد.
         </div>
 
