@@ -8,7 +8,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
     },
     {
       path: '/',
@@ -19,20 +19,35 @@ const router = createRouter({
         {
           path: 'stats',
           name: 'stats',
-          component: () => import('../views/StatsView.vue')
+          component: () => import('../views/StatsView.vue'),
         },
         {
           path: 'packages',
           name: 'packages',
-          component: () => import('../views/PackagesView.vue')
-        }
-      ]
-    }
-  ]
+          component: () => import('../views/PackagesView.vue'),
+        },
+        {
+          path: 'agencies',
+          name: 'agencies',
+          component: () => import('../views/AgenciesView.vue'),
+        },
+        {
+          path: 'questions',
+          name: 'questions',
+          component: () => import('../views/QuestionsView.vue'),
+        },
+        {
+          path: 'survey-stats',
+          name: 'survey-stats',
+          component: () => import('../views/SurveyStatsView.vue'),
+        },
+      ],
+    },
+  ],
 })
 
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
   const isAuthenticated = auth.currentUser
 
   if (requiresAuth && !isAuthenticated) {
@@ -43,4 +58,3 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
-
