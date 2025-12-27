@@ -26,42 +26,57 @@ const logout = async () => {
         </div>
       </div>
 
-      <nav class="flex-1 p-4 space-y-2">
-        <RouterLink
-          to="/stats"
-          active-class="bg-blue-600 text-white"
-          class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
-        >
-          📊 إحصائيات العروض
-        </RouterLink>
-        <RouterLink
-          to="/packages"
-          active-class="bg-blue-600 text-white"
-          class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
-        >
-          ✈️ إدارة العروض
-        </RouterLink>
-        <RouterLink
-          to="/survey-stats"
-          active-class="bg-blue-600 text-white"
-          class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
-        >
-          📈 إحصائيات الاستبيانات
-        </RouterLink>
-        <RouterLink
-          to="/agencies"
-          active-class="bg-blue-600 text-white"
-          class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
-        >
-          🏢 إدارة الوكالات
-        </RouterLink>
-        <RouterLink
-          to="/questions"
-          active-class="bg-blue-600 text-white"
-          class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
-        >
-          ❓ إدارة الأسئلة
-        </RouterLink>
+      <nav class="flex-1 p-4 space-y-4">
+        <div>
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">
+            العروض
+          </h3>
+          <div class="space-y-1">
+            <RouterLink
+              to="/stats"
+              active-class="bg-blue-600 text-white"
+              class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              📊 إحصائيات العروض
+            </RouterLink>
+            <RouterLink
+              to="/packages"
+              active-class="bg-blue-600 text-white"
+              class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              ✈️ إدارة العروض
+            </RouterLink>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">
+            الاستبيانات
+          </h3>
+          <div class="space-y-1">
+            <RouterLink
+              to="/survey-stats"
+              active-class="bg-blue-600 text-white"
+              class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              📈 إحصائيات الاستبيانات
+            </RouterLink>
+            <RouterLink
+              to="/agencies"
+              active-class="bg-blue-600 text-white"
+              class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              🏢 إدارة الوكالات
+            </RouterLink>
+            <RouterLink
+              to="/questions"
+              active-class="bg-blue-600 text-white"
+              class="block p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              ❓ إدارة الأسئلة
+            </RouterLink>
+          </div>
+        </div>
       </nav>
 
       <div class="p-4 border-t border-gray-700">

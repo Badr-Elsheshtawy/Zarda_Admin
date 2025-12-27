@@ -58,6 +58,23 @@ export const useResponsesStore = defineStore('responses', () => {
       }
     })
 
+    const npsScores = items.value
+      .filter((r) => r.nps !== null && r.nps !== undefined)
+      .map((r) => r.nps)
+    const promoters = npsScores.filter((score) => score >= 9).length
+    const passives = npsScores.filter((score) => score >= 7 && score <= 8).length
+    const detractors = npsScores.filter((score) => score <= 6).length
+    const totalNps = npsScores.length
+    const npsScore = totalNps > 0 ? (((promoters - detractors) / totalNps) * 100).toFixed(1) : 0
+
+    analytics.nps = {
+      score: parseFloat(npsScore),
+      promoters,
+      passives,
+      detractors,
+      total: totalNps,
+    }
+
     return analytics
   })
 

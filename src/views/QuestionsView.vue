@@ -116,8 +116,7 @@ const editingQuestion = ref(null)
 const categories = [
   { label: 'الكل', value: null },
   { label: 'التذاكر', value: 'Flight' },
-  { label: 'الفنادق', value: 'Hotel' },
-  { label: 'التأشيرات', value: 'Visa' },
+  { label: 'الفنادق / التأشيرات', value: 'HotelVisa' },
   { label: 'المالية', value: 'Finance' }
 ]
 
@@ -133,8 +132,8 @@ const getCategoryName = (cat) => categories.find(c => c.value === cat)?.label ||
 const getCategoryColor = (cat) => {
   const map = {
     Flight: 'bg-blue-900/40 text-blue-400',
-    Hotel: 'bg-green-900/40 text-green-400',
-    Visa: 'bg-yellow-900/40 text-yellow-400',
+    // Hotel: 'bg-green-900/40 text-green-400',
+    HotelVisa : 'bg-yellow-900/40 text-yellow-400',
     Finance: 'bg-red-900/40 text-red-400'
   }
   return map[cat] || 'bg-gray-700 text-gray-300'

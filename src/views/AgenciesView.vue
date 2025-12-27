@@ -9,12 +9,14 @@
         @click="showAddModal = true"
         class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg shadow-lg hover:shadow-blue-500/20 transition flex items-center gap-2 font-bold"
       >
-        <span>➕</span> إضافة وكالة
+        <span >➕</span> إضافة وكالة
       </button>
     </div>
 
     <div v-if="loadingData" class="text-center py-20">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"
+      ></div>
     </div>
 
     <div v-else class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
@@ -46,38 +48,54 @@
                   </div>
                   <div>
                     <div class="font-bold text-gray-100">{{ agency.name }}</div>
-                    <div class="text-xs text-gray-500">{{ agency.id.substring(0,6) }}...</div>
+                    <div class="text-xs text-gray-500">{{ agency.id.substring(0, 6) }}...</div>
                   </div>
                 </div>
               </td>
               <td class="p-4 align-middle w-1/4">
                 <div class="flex items-center gap-2">
                   <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       class="h-full rounded-full transition-all duration-500"
                       :class="getProgressColor(agency.completionRate)"
                       :style="{ width: `${Math.min(agency.completionRate, 100)}%` }"
                     ></div>
                   </div>
-                  <span class="text-xs font-bold w-8 text-left">{{ Math.round(agency.completionRate) }}%</span>
+                  <span class="text-xs font-bold w-8 text-left"
+                    >{{ Math.round(agency.completionRate) }}%</span
+                  >
                 </div>
               </td>
               <td class="p-4">
                 <span
                   class="px-2.5 py-1 rounded-md text-xs font-bold"
-                  :class="agency.currentResponses >= agency.targetEmployees ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-300'"
+                  :class="
+                    agency.currentResponses >= agency.targetEmployees
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-gray-700 text-gray-300'
+                  "
                 >
                   {{ agency.currentResponses }} / {{ agency.targetEmployees }}
                 </span>
               </td>
               <td class="p-4">
-                <button 
-                  @click="copyLink(agency.slug)"
-                  class="group flex items-center gap-2 text-gray-400 hover:text-white bg-gray-900/50 hover:bg-blue-600 p-2 rounded-lg transition text-sm border border-gray-600 hover:border-blue-500"
-                >
-                  <span>🔗</span>
-                  <span class="text-xs">نسخ الرابط</span>
-                </button>
+                <div class="flex gap-2">
+                  <button
+                    @click="openLink(agency.slug)"
+                    class="group flex items-center gap-2 text-gray-400 hover:text-white bg-gray-900/50 hover:bg-green-600 p-2 rounded-lg transition text-sm border border-gray-600 hover:border-green-500"
+                    title="فتح الاستبيان"
+                  >
+                    <span>📱</span>
+                    <span class="text-xs">فتح</span>
+                  </button>
+                  <button
+                    @click="copyLink(agency.slug)"
+                    class="group flex items-center gap-2 text-gray-400 hover:text-white bg-gray-900/50 hover:bg-blue-600 p-2 rounded-lg transition text-sm border border-gray-600 hover:border-blue-500"
+                  >
+                    <span>🔗</span>
+                    <span class="text-xs">نسخ</span>
+                  </button>
+                </div>
               </td>
               <td class="p-4">
                 <div class="flex gap-2">
@@ -88,8 +106,8 @@
                   >
                     ✏️
                   </button>
-                  <button 
-                    @click="deleteAgency(agency.id)" 
+                  <button
+                    @click="deleteAgency(agency.id)"
                     class="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition"
                     title="حذف"
                   >
@@ -109,14 +127,18 @@
         class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         @click.self="closeModal"
       >
-        <div class="bg-gray-800 rounded-2xl border border-gray-600 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
-          <div class="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
+        <div
+          class="bg-gray-800 rounded-2xl border border-gray-600 shadow-2xl w-full max-w-lg overflow-hidden transform transition-all"
+        >
+          <div
+            class="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50"
+          >
             <h2 class="text-xl font-bold text-white">
               {{ showEditModal ? '✏️ تعديل بيانات الوكالة' : '🏢 إضافة وكالة جديدة' }}
             </h2>
             <button @click="closeModal" class="text-gray-400 hover:text-white transition">✕</button>
           </div>
-          
+
           <form @submit.prevent="saveAgency" class="p-6 space-y-5">
             <div>
               <label class="block text-gray-300 text-sm font-bold mb-2">اسم الوكالة</label>
@@ -128,9 +150,11 @@
                 required
               />
             </div>
-            
+
             <div>
-              <label class="block text-gray-300 text-sm font-bold mb-2">عدد الموظفين المستهدف</label>
+              <label class="block text-gray-300 text-sm font-bold mb-2"
+                >عدد الموظفين المستهدف</label
+              >
               <input
                 v-model="agencyForm.targetEmployees"
                 type="number"
@@ -141,21 +165,25 @@
               <p class="text-xs text-gray-500 mt-1">يستخدم لحساب نسبة الإنجاز</p>
             </div>
 
-            <div class="bg-gray-700/30 p-4 rounded-xl border border-dashed border-gray-600 text-center">
+            <div
+              class="bg-gray-700/30 p-4 rounded-xl border border-dashed border-gray-600 text-center"
+            >
               <label class="cursor-pointer block">
                 <div v-if="previewUrl" class="mb-3">
-                  <img :src="previewUrl" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-blue-500 shadow-lg" />
+                  <img
+                    :src="previewUrl"
+                    class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-blue-500 shadow-lg"
+                  />
                 </div>
                 <div v-else class="mb-3">
-                  <div class="w-20 h-20 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-3xl">📷</div>
+                  <div
+                    class="w-20 h-20 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-3xl"
+                  >
+                    📷
+                  </div>
                 </div>
                 <span class="text-blue-400 font-bold hover:underline">اضغط لرفع الشعار</span>
-                <input
-                  @change="handleFileChange"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                />
+                <input @change="handleFileChange" type="file" accept="image/*" class="hidden" />
               </label>
             </div>
 
@@ -180,7 +208,10 @@
       </div>
     </Transition>
 
-    <div v-if="toastMsg" class="fixed bottom-5 left-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-bounce">
+    <div
+      v-if="toastMsg"
+      class="fixed bottom-5 left-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-bounce"
+    >
       {{ toastMsg }}
     </div>
   </div>
@@ -213,7 +244,7 @@ const agenciesWithResponses = computed(() => {
     return {
       ...agency,
       currentResponses: responses,
-      completionRate: (responses / target) * 100
+      completionRate: (responses / target) * 100,
     }
   })
 })
@@ -237,7 +268,9 @@ const handleFileChange = (event) => {
   if (file) {
     selectedFile.value = file
     const reader = new FileReader()
-    reader.onload = (e) => { previewUrl.value = e.target.result }
+    reader.onload = (e) => {
+      previewUrl.value = e.target.result
+    }
     reader.readAsDataURL(file)
   }
 }
@@ -246,12 +279,23 @@ const uploadToCloudinary = async (file) => {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('upload_preset', UPLOAD_PRESET)
-  const res = await axios.post(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, formData)
+  const res = await axios.post(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    formData,
+  )
   return res.data.secure_url
 }
 
 const generateSlug = (name) => {
-  return name.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF\s]/g, '').replace(/\s+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 7)
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0600-\u06FF\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/(^-|-$)/g, '') +
+    '-' +
+    Math.random().toString(36).substring(2, 7)
+  )
 }
 
 const saveAgency = async () => {
@@ -298,14 +342,28 @@ const deleteAgency = async (id) => {
 }
 
 const copyLink = (slug) => {
-  const link = `https://feedback-survey.netlify.app/survey/${slug}`
+  const localLink = `http://localhost:5176/${slug}`
+  const prodLink = `https://feedback-survey.netlify.app/survey/${slug}`
+
+  const link = window.location.hostname === 'localhost' ? localLink : prodLink
+
   navigator.clipboard.writeText(link)
   showToast('📋 تم نسخ الرابط!')
 }
 
+const openLink = (slug) => {
+  const localLink = `http://localhost:5176/${slug}`
+  const prodLink = `https://feedback-survey.netlify.app/survey/${slug}`
+
+  const link = window.location.hostname === 'localhost' ? localLink : prodLink
+
+  window.open(link, '_blank')
+  showToast('📱 تم فتح الاستبيان!')
+}
+
 const showToast = (msg) => {
   toastMsg.value = msg
-  setTimeout(() => toastMsg.value = '', 3000)
+  setTimeout(() => (toastMsg.value = ''), 3000)
 }
 
 const closeModal = () => {
@@ -319,8 +377,25 @@ const closeModal = () => {
 </script>
 
 <style scoped>
-.animate-fade-in { animation: fadeIn 0.4s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
 </style>
