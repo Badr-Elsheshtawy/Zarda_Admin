@@ -354,7 +354,7 @@ const deleteAgency = async (id) => {
 
 const copyLink = (slug) => {
   const localLink = `http://localhost:5173/${slug}`
-  const prodLink = `https://zarda-survey.netlify.app/survey/${slug}`
+  const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 
@@ -364,7 +364,7 @@ const copyLink = (slug) => {
 
 const openLink = (slug) => {
   const localLink = `http://localhost:5173/${slug}`
-  const prodLink = `https://zarda-survey.netlify.app/survey/${slug}`
+  const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 
