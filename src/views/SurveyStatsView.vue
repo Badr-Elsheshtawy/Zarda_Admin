@@ -28,7 +28,7 @@
 
       <div v-else class="space-y-8">
         <!-- إحصائيات سريعة -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,6 +71,18 @@
             <template #label>NPS Score</template>
             <template #value>{{ stats.npsScore }}</template>
             <template #subtitle>Net Promoter Score</template>
+          </StatCard>
+
+          <StatCard>
+            <template #icon>
+              <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </template>
+            <template #label>عدد الزوار</template>
+            <template #value>{{ statsStore.visitors }}</template>
+            <template #subtitle>زائر للاستبيانات</template>
           </StatCard>
         </div>
 
@@ -372,6 +384,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { useResponsesStore } from '@/stores/responses'
 import { useQuestionsStore } from '@/stores/questions'
 import { useAgenciesStore } from '@/stores/agencies'
+import { useStatsStore } from '@/stores/stats'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement)
 
@@ -379,12 +392,13 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 const responsesStore = useResponsesStore()
 const questionsStore = useQuestionsStore()
 const agenciesStore = useAgenciesStore()
+const statsStore = useStatsStore()
 
 // استخدام البيانات من الـ stores
 const responses = computed(() => responsesStore.all)
 const questions = computed(() => questionsStore.all)
 const agencies = computed(() => agenciesStore.all)
-const loading = computed(() => responsesStore.loading || questionsStore.loading || agenciesStore.loading)
+const loading = computed(() => responsesStore.loading || questionsStore.loading || agenciesStore.loading || statsStore.loading)
 
 // تحديث تلقائي كل دقيقتين
 let refreshInterval = null
@@ -396,6 +410,7 @@ const startAutoRefresh = () => {
       await responsesStore.fetchAll()
       await questionsStore.fetchAll()
       await agenciesStore.fetchAll()
+      await statsStore.fetchAll()
     }
   }, 2 * 60 * 1000) // كل دقيقتين
 }
@@ -414,6 +429,7 @@ const handleVisibilityChange = async () => {
     await responsesStore.fetchAll()
     await questionsStore.fetchAll()
     await agenciesStore.fetchAll()
+    await statsStore.fetchAll()
   }
 }
 
@@ -640,7 +656,8 @@ const refreshData = async () => {
     await Promise.all([
       responsesStore.fetchAll({ force: true }),
       questionsStore.fetchAll({ force: true }),
-      agenciesStore.fetchAll({ force: true })
+      agenciesStore.fetchAll({ force: true }),
+      statsStore.fetchAll({ force: true })
     ])
   } catch (error) {
     console.error('Error fetching data:', error)
