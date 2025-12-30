@@ -27,8 +27,7 @@
         <LoadingSpinner>جاري تحميل البيانات...</LoadingSpinner>
       </div>
 
-      <div v-else class="space-y-8">
-        <!-- إحصائيات سريعة -->
+      <div class="space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard>
             <template #icon>
@@ -77,7 +76,6 @@
           </StatCard>
         </div>
 
-        <!-- العروض الأخيرة -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-xl font-bold text-white flex items-center gap-3">
@@ -102,7 +100,7 @@
             >
               <div class="flex items-start gap-4">
                 <img
-                  :src="pkg.image || '/zarda_logo.png'"
+                  :src="pkg.imageUrl || '/zarda_logo.png'"
                   @error="$event.target.src = '/zarda_logo.png'"
                   class="w-16 h-16 rounded-lg object-cover border border-white/20"
                 />
@@ -110,7 +108,7 @@
                   <h4 class="font-semibold text-white text-sm mb-1 line-clamp-2">{{ pkg.title }}</h4>
                   <p class="text-slate-400 text-xs mb-2">{{ pkg.destination }}</p>
                   <div class="flex items-center justify-between">
-                    <span class="text-green-400 font-bold text-sm">{{ pkg.price }} {{ pkg.currency }}</span>
+                    <span class="text-green-400 font-bold text-sm">{{ pkg.price }} {{ pkg.currency || 'د.ل' }}</span>
                     <span class="text-slate-500 text-xs">{{ pkg.views || 0 }} مشاهدة</span>
                   </div>
                 </div>
@@ -119,7 +117,6 @@
           </div>
         </div>
 
-        <!-- الإحصائيات السريعة -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
@@ -135,7 +132,7 @@
                   <div class="w-24 h-2 bg-white/20 rounded-full overflow-hidden">
                     <div
                       class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
-                      :style="{ width: `${(count / stats.totalPackages) * 100}%` }"
+                      :style="{ width: `${stats.totalPackages ? (count / stats.totalPackages) * 100 : 0}%` }"
                     ></div>
                   </div>
                   <span class="text-white font-semibold w-8 text-left">{{ count }}</span>
@@ -167,15 +164,24 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { collection, getDocs, doc, getDoc, query, orderBy, limit } from 'firebase/firestore'
-import { db } from '../firebase'
 import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
+// Import Stores
+import { useAdminPackagesStore } from '@/stores/packages'
+import { useStatsStore } from '@/stores/stats'
+import { useResponsesStore } from '@/stores/responses'
+
+const packagesStore = useAdminPackagesStore()
+const statsStore = useStatsStore()
+const responsesStore = useResponsesStore()
+
 const loading = ref(true)
-const packages = ref([])
-const siteVisitors = ref(0)
+
+// ربط البيانات بالـ Stores
+const packages = computed(() => packagesStore.all)
+const siteVisitors = computed(() => statsStore.visitors)
 
 const stats = computed(() => {
   const totalPackages = packages.value.length
@@ -198,35 +204,26 @@ const stats = computed(() => {
     avgViews,
     siteVisitors: siteVisitors.value,
     categoryStats,
-    todayViews: 0, // يمكن حسابها من البيانات
-    viewsGrowth: 0 // يمكن حسابها من البيانات
+    todayViews: 0, 
+    viewsGrowth: 0 
   }
 })
 
 const recentPackages = computed(() => {
   return [...packages.value]
-    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+    // استخدام Date مباشر للتعامل مع نصوص Supabase
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6)
 })
 
 const fetchData = async () => {
   try {
     loading.value = true
-
-    // جلب العروض
-    const packagesQuery = query(collection(db, 'packages'), orderBy('createdAt', 'desc'), limit(50))
-    const packagesSnapshot = await getDocs(packagesQuery)
-    packages.value = packagesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      views: doc.data().views || 0,
-      active: typeof doc.data().active === 'boolean' ? doc.data().active : true
-    }))
-
-    // جلب إحصائيات الموقع
-    const siteDoc = await getDoc(doc(db, 'stats', 'site'))
-    siteVisitors.value = siteDoc.exists() ? siteDoc.data().visitors || 0 : 0
-
+    await Promise.all([
+      packagesStore.fetchAll({ force: true }),
+      statsStore.fetchAll({ force: true }),
+      responsesStore.fetchAll({ force: true }) // لجلب بيانات الردود إذا لزم
+    ])
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
   } finally {

@@ -27,8 +27,8 @@
       </div>
 
       <div v-else class="space-y-8">
-        <!-- إحصائيات سريعة -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,6 @@
             <template #value>{{ stats.totalResponses }}</template>
             <template #subtitle>ردود مكتملة</template>
           </StatCard>
-
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +49,6 @@
             <template #value>{{ stats.averageSatisfaction.toFixed(1) }}/5</template>
             <template #subtitle>درجة الرضا العامة</template>
           </StatCard>
-
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,84 +56,22 @@
               </svg>
             </template>
             <template #label>معدل الإنجاز</template>
-            <template #value>{{ stats.completionRate }}%</template>
+            <template #value>{{ stats.completionRate > 0 ? stats.completionRate + '%' : 'لا يوجد بيانات' }}</template>
             <template #subtitle>نسبة إكمال الاستبيانات</template>
           </StatCard>
-
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
               </svg>
             </template>
-            <template #label>NPS Score</template>
+            <template #label>NPS (مؤشر رضا العملاء)</template>
             <template #value>{{ stats.npsScore }}</template>
-            <template #subtitle>Net Promoter Score</template>
-          </StatCard>
-
-          <StatCard>
-            <template #icon>
-              <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-              </svg>
-            </template>
-            <template #label>عدد الزوار</template>
-            <template #value>{{ statsStore.visitors }}</template>
-            <template #subtitle>زائر للاستبيانات</template>
+            <template #subtitle>النسبة بين المروجين والمنتقدين</template>
           </StatCard>
         </div>
 
-        <!-- إحصائيات إضافية مهمة -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard>
-            <template #icon>
-              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </template>
-            <template #label>أعلى رضا</template>
-            <template #value>{{ stats.highestSatisfaction.toFixed(1) }}/5</template>
-            <template #subtitle>{{ stats.topAgencyName }}</template>
-          </StatCard>
-
-          <StatCard>
-            <template #icon>
-              <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </template>
-            <template #label>أقل رضا</template>
-            <template #value>{{ stats.lowestSatisfaction.toFixed(1) }}/5</template>
-            <template #subtitle>{{ stats.lowestAgencyName }}</template>
-          </StatCard>
-
-          <StatCard>
-            <template #icon>
-              <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-              </svg>
-            </template>
-            <template #label>عدد الوكالات</template>
-            <template #value>{{ stats.totalAgencies }}</template>
-            <template #subtitle>وكالات نشطة</template>
-          </StatCard>
-
-          <StatCard>
-            <template #icon>
-              <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </template>
-            <template #label>متوسط الوقت</template>
-            <template #value>{{ stats.averageResponseTime }}</template>
-            <template #subtitle>دقيقة للرد</template>
-          </StatCard>
-        </div>
-
-        <!-- أكثر الشركات رضا وأقلها -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- أكثر الشركات رضا -->
           <div class="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 rounded-xl p-6 border border-emerald-500/20">
             <div class="flex items-center mb-4">
               <div class="p-2 bg-emerald-500/20 rounded-lg mr-3">
@@ -153,22 +89,15 @@
                   </div>
                   <div>
                     <p class="text-white font-medium">{{ agency.name }}</p>
-                    <p class="text-emerald-300 text-sm">{{ agency.responses }} رد</p>
+                    <p class="text-emerald-300 text-sm">نسبة الرضا: {{ (agency.average * 20).toFixed(0) }}%</p>
                   </div>
                 </div>
                 <div class="text-right">
                   <p class="text-white font-bold">{{ agency.average.toFixed(1) }}/5</p>
-                  <div class="flex">
-                    <svg v-for="i in 5" :key="i" class="w-3 h-3" :class="i <= Math.round(agency.average) ? 'text-yellow-400' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- أقل الشركات رضا -->
           <div class="bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-xl p-6 border border-red-500/20">
             <div class="flex items-center mb-4">
               <div class="p-2 bg-red-500/20 rounded-lg mr-3">
@@ -186,25 +115,18 @@
                   </div>
                   <div>
                     <p class="text-white font-medium">{{ agency.name }}</p>
-                    <p class="text-red-300 text-sm">{{ agency.responses }} رد</p>
+                    <p class="text-red-300 text-sm">نسبة الرضا: {{ (agency.average * 20).toFixed(0) }}%</p>
                   </div>
                 </div>
                 <div class="text-right">
                   <p class="text-white font-bold">{{ agency.average.toFixed(1) }}/5</p>
-                  <div class="flex">
-                    <svg v-for="i in 5" :key="i" class="w-3 h-3" :class="i <= Math.round(agency.average) ? 'text-yellow-400' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                    </svg>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- الرسوم البيانية -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- توزيع التقييمات -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
               <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,25 +134,23 @@
               </svg>
               توزيع التقييمات
             </h3>
-            <div class="h-80">
+            <div class="h-64">
               <Bar :data="ratingDistributionData" :options="chartOptions" />
             </div>
           </div>
 
-          <!-- الرضا حسب الفئة -->
           <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
               <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              الرضا حسب الفئة
+              الرضا حسب القسم
             </h3>
-            <div class="h-80">
+            <div class="h-64">
               <Bar :data="categorySatisfactionData" :options="chartOptions" />
             </div>
           </div>
 
-          <!-- NPS Distribution -->
           <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
               <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,95 +159,61 @@
               </svg>
               توزيع NPS
             </h3>
-            <div class="h-80">
+            <div class="h-64">
               <Doughnut :data="npsDistributionData" :options="doughnutOptions" />
             </div>
           </div>
+        </div>
 
-          <!-- اتجاه الرضا مع الوقت -->
-          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-              اتجاه الرضا مع الوقت
-            </h3>
-            <div class="h-80">
-              <Line :data="satisfactionTrendData" :options="lineOptions" />
+        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            إحصائيات الأسئلة التفصيلية
+          </h3>
+          
+          <div class="flex flex-wrap gap-4 mb-6">
+            <select v-model="selectedQuestionType" class="bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">كل الأنواع</option>
+              <option value="text">نصي</option>
+              <option value="choice">اختيار من متعدد</option>
+              <option value="rating">تقييم</option>
+            </select>
+            <select v-model="selectedAgency" class="bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">كل الوكالات</option>
+              <option v-for="agency in agencies" :key="agency.id" :value="agency.name">{{ agency.name }}</option>
+            </select>
+            <select v-model="selectedRating" class="bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="">كل التقييمات</option>
+              <option v-for="n in 5" :key="n" :value="n">{{ n }}/5</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+            <div v-for="q in filteredQuestionsStats" :key="q.id" class="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-colors">
+              <div class="font-bold text-white mb-3 border-b border-white/10 pb-2">{{ q.text }}</div>
+              <table class="w-full text-sm text-white/80">
+                <thead>
+                  <tr class="text-right text-gray-400">
+                    <th class="pb-2">الإجابة / الاختيار</th>
+                    <th class="pb-2 text-left">العدد</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr v-for="opt in q.options" :key="opt.value">
+                    <td class="py-2">{{ opt.value }}</td>
+                    <td class="py-2 font-bold text-left" dir="ltr">{{ opt.count }}</td>
+                  </tr>
+                  <tr v-if="q.options.length === 0">
+                    <td colspan="2" class="py-2 text-center text-gray-500">لا توجد إجابات مطابقة</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <!-- إحصائيات مفصلة -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <!-- أفضل الأسئلة -->
-          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              أعلى الأسئلة تقييماً
-            </h3>
-            <div class="space-y-4">
-              <div v-for="(question, index) in topQuestions" :key="question.id" class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center text-green-400 font-bold text-sm">
-                  {{ index + 1 }}
-                </div>
-                <div class="flex-1">
-                  <p class="text-white text-sm line-clamp-2">{{ question.text }}</p>
-                  <p class="text-gray-400 text-xs">{{ question.averageRating }}/5</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- أسوأ الأسئلة -->
-          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              أقل الأسئلة تقييماً
-            </h3>
-            <div class="space-y-4">
-              <div v-for="(question, index) in worstQuestions" :key="question.id" class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center text-red-400 font-bold text-sm">
-                  {{ index + 1 }}
-                </div>
-                <div class="flex-1">
-                  <p class="text-white text-sm line-clamp-2">{{ question.text }}</p>
-                  <p class="text-gray-400 text-xs">{{ question.averageRating }}/5</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- إحصائيات الوكالات -->
-          <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-              </svg>
-              أداء الوكالات
-            </h3>
-            <div class="space-y-4">
-              <div v-for="(agency, index) in stats.topAgencies" :key="agency.name" class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-sm">
-                    {{ index + 1 }}
-                  </div>
-                  <span class="text-white text-sm">{{ agency.name }}</span>
-                </div>
-                <div class="text-right">
-                  <p class="text-green-400 font-bold">{{ agency.average.toFixed(1) }}/5</p>
-                  <p class="text-gray-400 text-xs">{{ agency.responses }} رد</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- جدول الردود الأخيرة -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,44 +226,54 @@
               <thead class="border-b border-white/20">
                 <tr class="text-right">
                   <th class="p-4 text-gray-300">الوكالة</th>
+                  <th class="p-4 text-gray-300">الموظف</th>
+                  <th class="p-4 text-gray-300">القسم</th>
                   <th class="p-4 text-gray-300">متوسط التقييم</th>
                   <th class="p-4 text-gray-300">NPS</th>
                   <th class="p-4 text-gray-300">التاريخ</th>
+                  <th class="p-4 text-gray-300">تفاصيل</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/10">
-                <tr v-for="response in recentResponses" :key="response.id" class="hover:bg-white/5 transition">
+                <tr v-for="response in filteredRecentResponses" :key="response.id" class="hover:bg-white/5 transition">
                   <td class="p-4">
                     <div class="flex items-center gap-3">
                       <img :src="response.agencyLogo || '/zarda_logo.png'" @error="$event.target.src = '/zarda_logo.png'" class="w-8 h-8 rounded-lg object-cover" />
                       <span>{{ response.agencyName }}</span>
                     </div>
                   </td>
+                  <td class="p-4">{{ response.employeeName || 'غير محدد' }}</td>
+                  <td class="p-4">{{ response.department || '-' }}</td>
                   <td class="p-4">
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">{{ calculateAverageRating(response).toFixed(1) }}/5</span>
                   </td>
                   <td class="p-4">
-                    <span :class="(response.finalNps || response.nps || 0) >= 30 ? 'bg-green-500/20 text-green-300' : (response.finalNps || response.nps || 0) >= 0 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'" class="px-2 py-1 rounded">
+                    <span :class="(response.finalNps || response.nps || 0) >= 9 ? 'bg-green-500/20 text-green-300' : (response.finalNps || response.nps || 0) >= 7 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'" class="px-2 py-1 rounded">
                       {{ response.finalNps || response.nps || 0 }}
                     </span>
                   </td>
-                  <td class="p-4 text-gray-400">{{ formatDate(response.timestamp || response.createdAt) }}</td>
+                  <td class="p-4 text-gray-400">{{ formatDate(response.created_at) }}</td>
+                  <td class="p-4">
+                    <button @click="openResponseModal(response)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition text-sm">عرض</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          
+          <SurveyResponseModal v-if="showResponseModal" :response="selectedResponse" @close="showResponseModal = false" />
         </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import SurveyResponseModal from '@/components/SurveyResponseModal.vue'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
-import { db } from '../firebase'
-import { Bar, Doughnut, Line } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement } from 'chart.js'
+import { Bar, Doughnut } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, Filler } from 'chart.js'
 import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -386,33 +282,43 @@ import { useQuestionsStore } from '@/stores/questions'
 import { useAgenciesStore } from '@/stores/agencies'
 import { useStatsStore } from '@/stores/stats'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, LineElement, PointElement)
+// تسجيل مكونات الرسم البياني (تمت إزالة LineElement و PointElement لأننا حذفنا رسم الاتجاه)
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, Filler)
 
-// استخدام الـ stores
+// استدعاء الـ Stores
 const responsesStore = useResponsesStore()
 const questionsStore = useQuestionsStore()
 const agenciesStore = useAgenciesStore()
 const statsStore = useStatsStore()
 
-// استخدام البيانات من الـ stores
 const responses = computed(() => responsesStore.all)
 const questions = computed(() => questionsStore.all)
 const agencies = computed(() => agenciesStore.all)
 const loading = computed(() => responsesStore.loading || questionsStore.loading || agenciesStore.loading || statsStore.loading)
 
-// تحديث تلقائي كل دقيقتين
+// حالة المودال
+const showResponseModal = ref(false)
+const selectedResponse = ref(null)
+
+// فلاتر إحصائيات الأسئلة
+const selectedQuestionType = ref('')
+const selectedAgency = ref('')
+const selectedRating = ref('')
+
+function openResponseModal(response) {
+  selectedResponse.value = response
+  showResponseModal.value = true
+}
+
+// التحديث التلقائي
 let refreshInterval = null
 
 const startAutoRefresh = () => {
   refreshInterval = setInterval(async () => {
-    // تحقق من وجود ردود جديدة فقط إذا كانت الصفحة مرئية
     if (document.visibilityState === 'visible') {
-      await responsesStore.fetchAll()
-      await questionsStore.fetchAll()
-      await agenciesStore.fetchAll()
-      await statsStore.fetchAll()
+      await refreshData()
     }
-  }, 2 * 60 * 1000) // كل دقيقتين
+  }, 2 * 60 * 1000)
 }
 
 const stopAutoRefresh = () => {
@@ -422,75 +328,75 @@ const stopAutoRefresh = () => {
   }
 }
 
-// تحديث البيانات عند العودة للصفحة
 const handleVisibilityChange = async () => {
   if (document.visibilityState === 'visible') {
-    // تحقق من وجود تحديثات جديدة
-    await responsesStore.fetchAll()
-    await questionsStore.fetchAll()
-    await agenciesStore.fetchAll()
-    await statsStore.fetchAll()
+    await refreshData()
   }
 }
 
-const stats = computed(() => {
-  const totalResponses = responses.value.length
-  const averageSatisfaction = totalResponses ? responses.value.reduce((acc, r) => acc + calculateAverageRating(r), 0) / totalResponses : 0
-  const completionRate = totalResponses ? Math.round((responses.value.filter(r => r.completed).length / totalResponses) * 100) : 0
-  const npsScore = calculateNPS(responses.value)
+// --- الحسابات والإحصائيات ---
 
-  // حساب إحصائيات الوكالات
-  const agencyStats = {}
-  responses.value.forEach(response => {
-    if (!agencyStats[response.agencyId]) {
-      agencyStats[response.agencyId] = {
-        name: response.agencyName,
-        totalRating: 0,
-        count: 0
-      }
+// دالة مساعدة لجلب اسم الوكالة
+const getAgencyName = (id) => {
+  const agency = agenciesStore.byId(id)
+  return agency ? agency.name : 'غير معروف'
+}
+
+// تعزيز كائنات الردود ببيانات الوكالة لسهولة الفلترة
+const enrichedResponses = computed(() => {
+  return responses.value.map(r => {
+    // حاول الحصول على اسم الوكالة من الرد نفسه، أو ابحث عنه في الستور
+    const agencyName = r.agencyName || r.agency_name || getAgencyName(r.agencyId || r.agency_id)
+    return {
+      ...r,
+      agencyName // إضافة الاسم الموحد
     }
-    agencyStats[response.agencyId].totalRating += calculateAverageRating(response)
-    agencyStats[response.agencyId].count++
+  })
+})
+
+const stats = computed(() => {
+  const totalResponses = enrichedResponses.value.length
+  const averageSatisfaction = totalResponses ? enrichedResponses.value.reduce((acc, r) => acc + calculateAverageRating(r), 0) / totalResponses : 0
+  const completionRate = totalResponses ? Math.round((enrichedResponses.value.filter(r => r.completed !== false).length / totalResponses) * 100) : 0
+  const npsScore = calculateNPS(enrichedResponses.value)
+
+  // إحصائيات الوكالات
+  const agencyStats = {}
+  enrichedResponses.value.forEach(response => {
+    const aId = response.agencyId || response.agency_id
+    const aName = response.agencyName
+    
+    if (!agencyStats[aId]) {
+      agencyStats[aId] = { name: aName, totalRating: 0, count: 0 }
+    }
+    agencyStats[aId].totalRating += calculateAverageRating(response)
+    agencyStats[aId].count++
   })
 
-  const agencies = Object.values(agencyStats).map(agency => ({
+  const agenciesArr = Object.values(agencyStats).map(agency => ({
     name: agency.name,
     average: agency.totalRating / agency.count,
     responses: agency.count
   }))
 
-  const sortedAgencies = agencies.sort((a, b) => b.average - a.average)
+  const sortedAgencies = agenciesArr.sort((a, b) => b.average - a.average)
   const topAgencies = sortedAgencies.slice(0, 5)
   const lowestAgencies = sortedAgencies.slice(-5).reverse()
-
-  const highestSatisfaction = topAgencies.length > 0 ? topAgencies[0].average : 0
-  const lowestSatisfaction = lowestAgencies.length > 0 ? lowestAgencies[0].average : 0
-  const topAgencyName = topAgencies.length > 0 ? topAgencies[0].name : 'غير محدد'
-  const lowestAgencyName = lowestAgencies.length > 0 ? lowestAgencies[0].name : 'غير محدد'
-  const totalAgencies = agencies.length
-
-  // حساب متوسط وقت الرد (افتراضياً 5 دقائق للعرض)
-  const averageResponseTime = '5 دقيقة'
 
   return {
     totalResponses,
     averageSatisfaction,
     completionRate,
     npsScore,
-    highestSatisfaction,
-    lowestSatisfaction,
-    topAgencyName,
-    lowestAgencyName,
-    totalAgencies,
-    averageResponseTime,
     topAgencies,
     lowestAgencies
   }
 })
 
+// بيانات الرسوم البيانية
 const ratingDistributionData = computed(() => {
   const distribution = [0, 0, 0, 0, 0]
-  responses.value.forEach(response => {
+  enrichedResponses.value.forEach(response => {
     const avgRating = calculateAverageRating(response)
     if (avgRating >= 1 && avgRating <= 5) {
       distribution[Math.floor(avgRating) - 1]++
@@ -509,25 +415,37 @@ const ratingDistributionData = computed(() => {
 })
 
 const categorySatisfactionData = computed(() => {
+  // الأقسام الثلاثة المحددة
+  const targetCategories = ['تذاكر', 'فنادق / تأشيرات', 'مالية']
   const categoryStats = {}
-  responses.value.forEach(response => {
-    const category = response.department || 'عام'
-    if (!categoryStats[category]) {
-      categoryStats[category] = { total: 0, count: 0 }
+  // تجهيز نسخة مطابقة للأقسام (بدون فراغات وبأحرف صغيرة)
+  const normalizedTargets = targetCategories.map(cat => cat.trim().toLowerCase())
+  targetCategories.forEach(cat => {
+    categoryStats[cat] = { total: 0, count: 0 }
+  })
+
+  enrichedResponses.value.forEach(response => {
+    let category = response.department ? response.department.trim().toLowerCase() : ''
+    const idx = normalizedTargets.indexOf(category)
+    if (idx !== -1) {
+      const realCat = targetCategories[idx]
+      categoryStats[realCat].total += calculateAverageRating(response)
+      categoryStats[realCat].count++
     }
-    categoryStats[category].total += calculateAverageRating(response)
-    categoryStats[category].count++
   })
 
   const labels = Object.keys(categoryStats)
-  const data = labels.map(cat => (categoryStats[cat].total / categoryStats[cat].count).toFixed(1))
+  const data = labels.map(cat => {
+    const count = categoryStats[cat].count
+    return count > 0 ? (categoryStats[cat].total / count).toFixed(1) : 0
+  })
 
   return {
     labels,
     datasets: [{
       label: 'متوسط الرضا',
       data,
-      backgroundColor: '#3b82f6',
+      backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'],
       borderRadius: 8
     }]
   }
@@ -535,9 +453,10 @@ const categorySatisfactionData = computed(() => {
 
 const npsDistributionData = computed(() => {
   let promoters = 0, passives = 0, detractors = 0
-  responses.value.forEach(response => {
-    if (response.nps >= 9) promoters++
-    else if (response.nps >= 7) passives++
+  enrichedResponses.value.forEach(response => {
+    const nps = response.finalNps || response.final_nps || 0
+    if (nps >= 9) promoters++
+    else if (nps >= 7) passives++
     else detractors++
   })
 
@@ -551,52 +470,87 @@ const npsDistributionData = computed(() => {
   }
 })
 
-const satisfactionTrendData = computed(() => {
-  // Group by date and calculate average
-  const trend = {}
-  responses.value.forEach(response => {
-    const timestamp = response.timestamp || response.createdAt
-    if (!timestamp) return
-    const date = new Date(timestamp.seconds * 1000).toISOString().split('T')[0]
-    if (!trend[date]) trend[date] = { total: 0, count: 0 }
-    trend[date].total += calculateAverageRating(response)
-    trend[date].count++
-  })
-
-  const sortedDates = Object.keys(trend).sort()
-  const data = sortedDates.map(date => (trend[date].total / trend[date].count).toFixed(1))
-
-  return {
-    labels: sortedDates.map(date => new Date(date).toLocaleDateString('ar-SA')),
-    datasets: [{
-      label: 'متوسط الرضا',
-      data,
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      tension: 0.4,
-      fill: true
-    }]
+// إحصائيات الأسئلة مع الفلاتر (Logic Corrected)
+const filteredQuestionsStats = computed(() => {
+  let filteredQuestions = questions.value
+  
+  // 1. فلترة الأسئلة حسب النوع
+  if (selectedQuestionType.value) {
+    filteredQuestions = filteredQuestions.filter(q => q.type === selectedQuestionType.value)
   }
+
+  return filteredQuestions.map(q => {
+    // 2. فلترة الردود بناءً على الوكالة والتقييم المختارين
+    let relevantResponses = enrichedResponses.value
+
+    if (selectedAgency.value) {
+      relevantResponses = relevantResponses.filter(r => r.agencyName === selectedAgency.value)
+    }
+
+    // إذا كان الفلتر تقييم، والأسئلة ليست من نوع تقييم، هذا الفلتر قد لا يكون منطقياً، لكن سنطبقه على أسئلة التقييم فقط
+    if (selectedRating.value && q.type === 'rating') {
+      relevantResponses = relevantResponses.filter(r => {
+        if (!r.answers || !Array.isArray(r.answers)) return false
+        const answer = r.answers.find(a => a.questionId == q.id || a.question == q.text)
+        return answer && Number(answer.rating) === Number(selectedRating.value)
+      })
+    }
+
+    // 3. استخراج الإجابات من الردود المفلترة
+    const answersForQ = relevantResponses.map(r => {
+      if (!r.answers || !Array.isArray(r.answers)) return null
+      const found = r.answers.find(a => a.questionId == q.id || a.question == q.text)
+      
+      if (!found) return null
+
+      // معالجة أسئلة التقييم لتحويل الأرقام لنص
+      if (q.type === 'rating' && found.rating) {
+         if (found.rating == 5) return 'ممتاز (5)'
+         if (found.rating == 4) return 'جيد (4)'
+         if (found.rating == 3) return 'محايد (3)'
+         if (found.rating == 2) return 'مقبول (2)'
+         if (found.rating == 1) return 'سيئ (1)'
+         return found.rating
+      }
+      
+      return found.text || found.choice || found.rating || ''
+    }).filter(val => val !== null && val !== '')
+
+    // 4. تجميع النتائج
+    // بالنسبة للتقييم، نفضل عرض الخيارات الثابتة حتى لو كانت 0
+    let optionsToCount = []
+    if (q.type === 'rating') {
+        optionsToCount = ['ممتاز (5)', 'جيد (4)', 'محايد (3)', 'مقبول (2)', 'سيئ (1)']
+    } else {
+        optionsToCount = [...new Set(answersForQ)]
+    }
+    
+    const options = optionsToCount.map(optValue => ({
+      value: optValue,
+      count: answersForQ.filter(a => a == optValue).length
+    }))
+
+    return {
+      id: q.id,
+      text: q.text,
+      options
+    }
+  })
 })
 
-const topQuestions = computed(() => {
-  // This would require question-level ratings data
-  return questions.value.slice(0, 5).map(q => ({ ...q, averageRating: 4.2 }))
+const filteredRecentResponses = computed(() => {
+  return [...enrichedResponses.value]
+    .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
+    .slice(0, 10)
 })
 
-const worstQuestions = computed(() => {
-  // This would require question-level ratings data
-  return questions.value.slice(-5).map(q => ({ ...q, averageRating: 2.8 }))
-})
-
-const recentResponses = computed(() => responses.value.slice(0, 10))
-
+// خيارات الرسوم البيانية
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { labels: { color: '#e5e7eb' } },
-    tooltip: { titleColor: '#fff', bodyColor: '#fff' }
+    legend: { labels: { color: '#e5e7eb', font: { family: 'Cairo' } } },
+    tooltip: { titleColor: '#fff', bodyColor: '#fff', titleFont: { family: 'Cairo' } }
   },
   scales: {
     y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
@@ -608,20 +562,7 @@ const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { position: 'bottom', labels: { color: '#fff' } }
-  }
-}
-
-const lineOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { labels: { color: '#e5e7eb' } },
-    tooltip: { titleColor: '#fff', bodyColor: '#fff' }
-  },
-  scales: {
-    y: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } },
-    x: { ticks: { color: '#9ca3af' }, grid: { display: false } }
+    legend: { position: 'bottom', labels: { color: '#fff', font: { family: 'Cairo' } } }
   }
 }
 
@@ -629,7 +570,7 @@ const calculateAverageRating = (response) => {
   if (!response.answers || !Array.isArray(response.answers)) return 0
   const ratings = response.answers
     .map(answer => answer.rating)
-    .filter(rating => rating !== null && rating !== undefined)
+    .filter(rating => rating !== null && rating !== undefined && rating > 0)
   return ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0
 }
 
@@ -637,22 +578,20 @@ const calculateNPS = (responses) => {
   if (!responses.length) return 0
   let promoters = 0, detractors = 0
   responses.forEach(r => {
-    const nps = r.finalNps || r.nps || 0
+    const nps = r.finalNps || r.final_nps || 0
     if (nps >= 9) promoters++
     else if (nps <= 6) detractors++
   })
   return Math.round(((promoters - detractors) / responses.length) * 100)
 }
 
-const formatDate = (timestamp) => {
-  if (!timestamp) return 'غير محدد'
-  const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp)
-  return date.toLocaleDateString('ar-SA')
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'غير محدد'
+  return new Date(dateStr).toLocaleString('ar-SA')
 }
 
 const refreshData = async () => {
   try {
-    // جلب البيانات من الـ stores
     await Promise.all([
       responsesStore.fetchAll({ force: true }),
       questionsStore.fetchAll({ force: true }),
@@ -677,10 +616,21 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+* {
+  font-family: 'Cairo', sans-serif;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

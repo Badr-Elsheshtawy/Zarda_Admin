@@ -57,7 +57,7 @@
                   </div>
                   <div>
                     <div class="font-bold text-gray-100">{{ agency.name }}</div>
-                    <div class="text-xs text-gray-500">{{ agency.id.substring(0, 6) }}...</div>
+                    <div class="text-xs text-gray-500">{{ String(agency.id).substring(0, 6) }}...</div>
                   </div>
                 </div>
               </td>
@@ -116,7 +116,7 @@
                     ✏️
                   </button>
                   <button
-                    @click="deleteAgency(agency.id)"
+                    @click="deleteAgency(agency)"
                     class="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition"
                     title="حذف"
                   >
@@ -194,6 +194,7 @@
                 <span class="text-blue-400 font-bold hover:underline">اضغط لرفع الشعار</span>
                 <input @change="handleFileChange" type="file" accept="image/*" class="hidden" />
               </label>
+              <p v-if="imageError" class="text-red-400 text-xs mt-2">{{ imageError }}</p>
             </div>
 
             <div class="flex gap-3 pt-2">
@@ -231,8 +232,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAgenciesStore } from '@/stores/agencies'
 import { useResponsesStore } from '@/stores/responses'
-import axios from 'axios'
-import { CLOUD_NAME, UPLOAD_PRESET } from '@/config/cloudinary'
+import { supabase } from '@/supabase' // Import Supabase
 import PageHeader from '@/components/PageHeader.vue'
 
 const agenciesStore = useAgenciesStore()
@@ -244,13 +244,14 @@ const loadingData = ref(true)
 const previewUrl = ref('')
 const selectedFile = ref(null)
 const toastMsg = ref('')
+const imageError = ref('') // Added for image error handling
 
 const agencyForm = ref({ name: '', targetEmployees: '', logoUrl: '', slug: '' })
 const editingAgency = ref(null)
 
 const agenciesWithResponses = computed(() => {
   return agenciesStore.all.map((agency) => {
-    const responses = responsesStore.all.filter((r) => r.agencyId === agency.id).length
+    const responses = responsesStore.all.filter((r) => r.agencyId === agency.id || r.agency_id === agency.id).length
     const target = agency.targetEmployees || 1
     return {
       ...agency,
@@ -274,27 +275,51 @@ const getProgressColor = (rate) => {
   return 'bg-yellow-500'
 }
 
-const handleFileChange = (event) => {
+// Updated File Handler for Supabase
+const handleFileChange = async (event) => {
   const file = event.target.files[0]
-  if (file) {
-    selectedFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewUrl.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+  imageError.value = ''
+  
+  if (!file) return
+
+  // Check file size (2MB limit)
+  if (file.size > 2 * 1024 * 1024) {
+    imageError.value = '⚠️ حجم الصورة كبير جداً! الحد الأقصى 2MB.'
+    return
   }
+
+  selectedFile.value = file
+  
+  // Create local preview
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    previewUrl.value = e.target.result
+  }
+  reader.readAsDataURL(file)
 }
 
-const uploadToCloudinary = async (file) => {
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('upload_preset', UPLOAD_PRESET)
-  const res = await axios.post(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    formData,
-  )
-  return res.data.secure_url
+// Upload function for Supabase Storage
+const uploadToSupabase = async (file) => {
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('logos')
+      .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    const { data } = supabase.storage
+      .from('logos')
+      .getPublicUrl(filePath)
+
+    return data.publicUrl
+  } catch (error) {
+    console.error('Upload Error:', error.message)
+    throw new Error('فشل رفع الصورة')
+  }
 }
 
 const generateSlug = (name) => {
@@ -313,7 +338,11 @@ const saveAgency = async () => {
   loading.value = true
   try {
     let logoUrl = agencyForm.value.logoUrl
-    if (selectedFile.value) logoUrl = await uploadToCloudinary(selectedFile.value)
+    
+    // Upload if a new file is selected
+    if (selectedFile.value) {
+      logoUrl = await uploadToSupabase(selectedFile.value)
+    }
 
     const data = {
       name: agencyForm.value.name,
@@ -332,7 +361,7 @@ const saveAgency = async () => {
     closeModal()
   } catch (error) {
     console.error(error)
-    alert('حدث خطأ أثناء الحفظ')
+    alert('حدث خطأ أثناء الحفظ: ' + error.message)
   } finally {
     loading.value = false
   }
@@ -345,15 +374,17 @@ const editAgency = (agency) => {
   showEditModal.value = true
 }
 
-const deleteAgency = async (id) => {
-  if (confirm('⚠️ هل أنت متأكد؟ سيتم حذف الوكالة ورابط الاستبيان الخاص بها.')) {
-    await agenciesStore.remove(id)
+const deleteAgency = async (agency) => {
+  if (confirm('⚠️ هل أنت متأكد؟ سيتم حذف الوكالة والصورة وجميع البيانات المرتبطة.')) {
+    // Pass both ID and logo URL for cleanup
+    await agenciesStore.remove(agency.id, agency.logoUrl)
     showToast('🗑️ تم الحذف')
   }
 }
 
 const copyLink = (slug) => {
-  const localLink = `http://localhost:5173/${slug}`
+  // Update these URLs based on your actual deployment
+  const localLink = `http://localhost:5173/survey/${slug}`
   const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
@@ -363,7 +394,7 @@ const copyLink = (slug) => {
 }
 
 const openLink = (slug) => {
-  const localLink = `http://localhost:5173/${slug}`
+  const localLink = `http://localhost:5173/survey/${slug}`
   const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
@@ -384,6 +415,7 @@ const closeModal = () => {
   previewUrl.value = ''
   selectedFile.value = null
   editingAgency.value = null
+  imageError.value = ''
 }
 </script>
 

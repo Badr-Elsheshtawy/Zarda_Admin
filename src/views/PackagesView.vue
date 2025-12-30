@@ -1,8 +1,12 @@
 <script setup>
+// ...existing code...
+
+const isAddOpen = ref(false)
+function closeAdd() {
+  isAddOpen.value = false
+}
 import { ref, onMounted, computed } from 'vue'
-import { db, auth, storage } from '../firebase'
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
+import { supabase } from '../supabase'
 import { useAdminPackagesStore } from '@/stores/packages'
 import { CLOUD_NAME, UPLOAD_PRESET, UPLOAD_FOLDER } from '@/config/cloudinary'
 import PageHeader from '@/components/PageHeader.vue'
@@ -124,7 +128,13 @@ const displayedPackages = computed(() => {
 const handleLogin = async () => {
   loginError.value = ''
   try {
-    await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail.value,
+      password: loginPassword.value
+    })
+    if (error) throw error
+    isLoggedIn.value = true
+    fetchPackages()
   } catch (err) {
     loginError.value = 'بيانات الدخول غير صحيحة!'
     console.error(err)
@@ -132,16 +142,17 @@ const handleLogin = async () => {
 }
 
 const handleLogout = async () => {
-  await signOut(auth)
+  await supabase.auth.signOut()
+  isLoggedIn.value = false
 }
 
-onMounted(() => {
-  isLoggedIn.value = !!auth.currentUser
+onMounted(async () => {
+  const { data: { session } } = await supabase.auth.getSession()
+  isLoggedIn.value = !!session
   checkingAuth.value = false
   if (isLoggedIn.value) fetchPackages()
-
-  onAuthStateChanged(auth, (user) => {
-    isLoggedIn.value = !!user
+  supabase.auth.onAuthStateChange((_event, session) => {
+    isLoggedIn.value = !!session
     if (isLoggedIn.value) fetchPackages()
   })
 })
@@ -508,7 +519,6 @@ const clearFilters = () => {
             </template>
             <template #title>إضافة عرض جديد</template>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <!-- ... form content ... -->
             </div>
             <div class="mt-8 flex gap-4">
               <button @click="addPackage" :disabled="loading" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-3">

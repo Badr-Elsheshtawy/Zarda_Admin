@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { auth } from '../firebase'
+import { supabase } from '../supabase'
 import LoginView from '../views/LoginView.vue'
 
 const router = createRouter({
@@ -8,11 +8,13 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
+      meta: { guest: true } // علامة لتمييز صفحة الزوار
     },
     {
       path: '/',
-      redirect: '/dashboard',
+      // التوجيه الافتراضي للداشبورد مباشرة
+      redirect: '/dashboard', 
       component: () => import('../components/Sidebar.vue'),
       meta: { requiresAuth: true },
       children: [
@@ -21,6 +23,7 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue')
         },
+        // ... بقية المسارات كما هي ...
         {
           path: 'stats',
           name: 'stats',
@@ -51,16 +54,23 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const isAuthenticated = auth.currentUser
+// الحارس (Navigation Guard) المصحح
+router.beforeEach(async (to, from, next) => {
+  // جلب الجلسة الحالية من السيرفر أو الكاش
+  const { data: { session } } = await supabase.auth.getSession()
 
-  if (requiresAuth && !isAuthenticated) {
+  // 1. إذا الصفحة تتطلب دخول والمستخدم غير مسجل -> وديه للوجن
+  if (to.meta.requiresAuth && !session) {
     next('/login')
-  } else {
+  } 
+  // 2. إذا المستخدم مسجل ويحاول يفتح صفحة الوجن -> رجعه للداشبورد (UX أفضل)
+  else if (to.meta.guest && session) {
+    next('/')
+  }
+  // 3. كمل عادي
+  else {
     next()
   }
 })
 
 export default router
-

@@ -27,7 +27,6 @@
       </div>
 
       <div v-else class="space-y-8">
-        <!-- فلترة الأسئلة -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <div class="flex flex-wrap gap-4 items-center">
             <div class="flex-1 min-w-64">
@@ -43,15 +42,14 @@
               class="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:border-blue-400 focus:outline-none transition"
             >
               <option value="">جميع الفئات</option>
-              <option value="General">عام</option>
-              <option value="سياحة">سياحة</option>
-              <option value="خدمات">خدمات</option>
-              <option value="تجارة">تجارة</option>
+              <option value="تذاكر">تذاكر</option>
+              <option value="فنادق و تأشيرات">فنادق و تأشيرات</option>
+              <option value="مالية">مالية</option>
+              
             </select>
           </div>
         </div>
 
-        <!-- قائمة الأسئلة -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div
             v-for="question in filteredQuestions"
@@ -104,7 +102,6 @@
           </div>
         </div>
 
-        <!-- رسالة عدم وجود أسئلة -->
         <div v-if="filteredQuestions.length === 0" class="text-center py-20">
           <svg class="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -114,7 +111,6 @@
         </div>
       </div>
 
-      <!-- Modal للإضافة -->
       <Modal :show="showAddModal" @close="showAddModal = false" title="إضافة سؤال جديد">
         <form @submit.prevent="addQuestion" class="space-y-6">
           <div>
@@ -136,10 +132,9 @@
                 required
                 class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
               >
-                <option value="General">عام</option>
-                <option value="سياحة">سياحة</option>
-                <option value="خدمات">خدمات</option>
-                <option value="تجارة">تجارة</option>
+                <option value="تذاكر">تذاكر</option>
+                <option value="فنادق و تأشيرات">فنادق / تأشيرات</option>
+                <option value="مالية">مالية</option>
               </select>
             </div>
 
@@ -187,7 +182,6 @@
         </form>
       </Modal>
 
-      <!-- Modal للتعديل -->
       <Modal :show="showEditModal" @close="showEditModal = false" title="تعديل السؤال">
         <form @submit.prevent="updateQuestion" class="space-y-6">
           <div>
@@ -208,10 +202,9 @@
                 required
                 class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
               >
-                <option value="General">عام</option>
-                <option value="سياحة">سياحة</option>
-                <option value="خدمات">خدمات</option>
-                <option value="تجارة">تجارة</option>
+                <option value="تذاكر">تذاكر</option>
+                <option value="فنادق و تأشيرات">فنادق / تأشيرات</option>
+                <option value="مالية">مالية</option>
               </select>
             </div>
 
@@ -359,3 +352,4 @@ onMounted(() => {
   overflow: hidden;
 }
 </style>
+

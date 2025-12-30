@@ -1,36 +1,42 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { db } from '@/firebase' // تأكد من نسخ ملف firebase.js من مشروع الأدمن
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore'
+import { ref } from 'vue'
+import { supabase } from '@/supabase'
 
 export const useSurveyStore = defineStore('survey', () => {
-  // State
   const agency = ref(null)
   const questions = ref([])
   const loading = ref(false)
   const error = ref(null)
   
-  // Survey State
-  const step = ref(0) // 0:Welcome, 1:Department, 2:Questions, 3:NPS, 4:Finish
+  const step = ref(0)
   const selectedDepartment = ref('')
   const employeeName = ref('')
-  const answers = ref({}) // { questionId: { rating: 5, text: '' } }
+  const answers = ref({}) 
   const npsScore = ref(null)
 
-  // Actions
+  // 1. جلب الوكالة
   const fetchAgencyBySlug = async (slug) => {
     loading.value = true
     error.value = null
     try {
-      const q = query(collection(db, 'agencies'), where('slug', '==', slug))
-      const snapshot = await getDocs(q)
-      
-      if (snapshot.empty) {
-        error.value = 'رابط الاستبيان غير صحيح أو منتهي الصلاحية.'
+      const { data, error: err } = await supabase
+        .from('agencies')
+        .select('*')
+        .eq('slug', slug)
+        .single() // نتوقع نتيجة واحدة
+
+      if (err || !data) {
+        error.value = 'رابط الاستبيان غير صحيح.'
         return false
       }
       
-      agency.value = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+      // تخزين البيانات (مع مراعاة أسماء الأعمدة في Supabase)
+      agency.value = { 
+        id: data.id, 
+        name: data.name, 
+        logoUrl: data.logo_url, // تأكد من الاسم في الجدول
+        targetEmployees: data.target_employees 
+      }
       return true
     } catch (e) {
       console.error(e)
@@ -41,17 +47,19 @@ export const useSurveyStore = defineStore('survey', () => {
     }
   }
 
+  // 2. جلب الأسئلة
   const fetchQuestions = async () => {
     loading.value = true
     try {
-      // نجلب الأسئلة الخاصة بالقسم المختار + الأسئلة العامة (إن وجدت)
-      const q = query(
-        collection(db, 'questions'), 
-        where('category', 'in', [selectedDepartment.value, 'General']),
-        orderBy('order', 'asc')
-      )
-      const snapshot = await getDocs(q)
-      questions.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+      const { data, error: err } = await supabase
+        .from('questions')
+        .select('*')
+        // الفلتر: القسم المختار OR عام
+        .in('category', [selectedDepartment.value, 'General'])
+        .order('order', { ascending: true })
+
+      if (err) throw err
+      questions.value = data
     } catch (e) {
       console.error(e)
     } finally {
@@ -59,10 +67,10 @@ export const useSurveyStore = defineStore('survey', () => {
     }
   }
 
+  // 3. إرسال الاستبيان
   const submitSurvey = async () => {
     loading.value = true
     try {
-      // تجهيز مصفوفة الإجابات
       const formattedAnswers = questions.value.map(q => ({
         questionId: q.id,
         question: q.text,
@@ -71,18 +79,21 @@ export const useSurveyStore = defineStore('survey', () => {
         text: answers.value[q.id]?.text || ''
       }))
 
-      await addDoc(collection(db, 'responses'), {
-        agencyId: agency.value.id,
-        agencyName: agency.value.name,
-        agencyLogo: agency.value.logoUrl,
-        employeeName: employeeName.value,
-        department: selectedDepartment.value,
-        answers: formattedAnswers,
-        finalNps: npsScore.value,
-        timestamp: serverTimestamp()
-      })
+      const { error: err } = await supabase
+        .from('responses')
+        .insert([
+          {
+            agency_id: agency.value.id,
+            employee_name: employeeName.value,
+            department: selectedDepartment.value,
+            answers: formattedAnswers, // سيتم تخزينه كـ JSONB تلقائياً
+            final_nps: npsScore.value
+          }
+        ])
+
+      if (err) throw err
       
-      step.value = 4 // الانتقال لصفحة الشكر
+      step.value = 4 // النجاح
     } catch (e) {
       console.error(e)
       alert('حدث خطأ أثناء الإرسال، حاول مرة أخرى.')
@@ -94,6 +105,11 @@ export const useSurveyStore = defineStore('survey', () => {
   return { 
     agency, questions, loading, error, step, 
     selectedDepartment, employeeName, answers, npsScore,
-    fetchAgencyBySlug, fetchQuestions, submitSurvey 
+    fetchAgencyBySlug, fetchQuestions, submitSurvey,
+    // Helper to add answer
+    addAnswer: (qId, val) => {
+       if(!answers.value[qId]) answers.value[qId] = {}
+       Object.assign(answers.value[qId], val)
+    }
   }
 })

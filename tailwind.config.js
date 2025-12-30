@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#0ea5e9', // لون سماوي يناسب السياحة
-        secondary: '#0f172a', // لون داكن للنصوص
-        accent: '#f59e0b', // لون برتقالي للأزرار والتركيز
+        primary: '#0ea5e9', 
+        secondary: '#0f172a',
+        accent: '#f59e0b',
       },
       fontFamily: {
-        sans: ['Tajawal', 'sans-serif'], // خط عربي مقترح (سنضيفه لاحقاً)
+        sans: ['Tajawal', 'sans-serif'], 
       }
     },
   },

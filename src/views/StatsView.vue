@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase'
+import { supabase } from '../supabase'
 import { Bar, Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement } from 'chart.js'
 import PageHeader from '@/components/PageHeader.vue'
@@ -14,15 +13,24 @@ const siteVisitors = ref(0)
 
 const fetchStats = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'packages'))
-    packages.value = querySnapshot.docs.map(d => ({
-      ...d.data(),
-      views: d.data().views || 0,
-      active: typeof d.data().active === 'boolean' ? d.data().active : true
+    // جلب العروض من supabase
+    const { data: pkgs, error: pkgErr } = await supabase
+      .from('packages')
+      .select('*')
+    if (pkgErr) throw pkgErr
+    packages.value = pkgs.map(p => ({
+      ...p,
+      views: p.views || 0,
+      active: typeof p.active === 'boolean' ? p.active : true
     }))
-    
-    const siteDoc = await getDoc(doc(db, 'stats', 'site'))
-    siteVisitors.value = siteDoc.exists() ? (siteDoc.data().visitors || 0) : 0
+
+    // جلب إحصائيات الزوار من supabase
+    const { data: stats, error: statsErr } = await supabase
+      .from('stats')
+      .select('visitors')
+      .eq('id', 1)
+      .single()
+    if (!statsErr && stats) siteVisitors.value = stats.visitors || 0
   } finally {
     loading.value = false
   }
