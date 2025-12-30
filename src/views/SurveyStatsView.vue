@@ -349,7 +349,7 @@ const enrichedResponses = computed(() => {
     const agencyName = r.agencyName || r.agency_name || getAgencyName(r.agencyId || r.agency_id)
     return {
       ...r,
-      agencyName // إضافة الاسم الموحد
+      agencyName 
     }
   })
 })

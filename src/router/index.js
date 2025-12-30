@@ -12,6 +12,12 @@ const router = createRouter({
       meta: { guest: true } // علامة لتمييز صفحة الزوار
     },
     {
+      path: '/survey/:slug',
+      name: 'survey',
+      component: () => import('../views/SurveyView.vue'),
+      meta: { guest: true } // الاستطلاع متاح للجميع بدون تسجيل
+    },
+    {
       path: '/',
       // التوجيه الافتراضي للداشبورد مباشرة
       redirect: '/dashboard', 
