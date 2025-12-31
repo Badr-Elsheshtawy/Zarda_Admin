@@ -140,15 +140,15 @@
           <div v-if="response.complaint_images && response.complaint_images.length > 0" class="mb-6">
             <div class="text-gray-300 text-sm mb-3">الصور المرفقة:</div>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div v-for="(imageUrl, index) in response.complaint_images" :key="index" class="relative">
+              <div v-for="(imageUrl, index) in response.complaint_images" :key="index" class="relative group">
                 <img
                   :src="imageUrl"
                   class="w-full h-32 object-cover rounded-lg border border-white/10 hover:border-white/30 transition cursor-pointer"
                   @click="openImageModal(imageUrl)"
                   @error="$event.target.style.display = 'none'"
                 />
-                <div class="absolute inset-0 bg-black/0 hover:bg-black/20 transition rounded-lg flex items-center justify-center">
-                  <svg class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition rounded-lg flex items-center justify-center pointer-events-none">
+                  <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                   </svg>
                 </div>
@@ -166,12 +166,40 @@
         <p>لم يتم العثور على الاستبيان المطلوب</p>
       </div>
 
-      <div v-if="showImageModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" @click="closeImageModal">
-        <div class="relative max-w-4xl max-h-full">
-          <img :src="selectedImage" class="max-w-full max-h-full object-contain rounded-lg" />
-          <button @click="closeImageModal" class="absolute -top-12 right-0 text-white text-2xl hover:text-gray-300 transition">×</button>
+      <transition name="fade">
+        <div 
+          v-if="showImageModal" 
+          class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" 
+          @click.self="closeImageModal"
+        >
+          <button 
+            @click="closeImageModal" 
+            class="absolute top-4 right-4 text-white hover:text-gray-300 transition p-2 bg-white/10 rounded-full z-50 hover:bg-white/20"
+          >
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <button 
+            @click="downloadImage" 
+            class="absolute top-4 left-4 text-white hover:text-gray-300 transition p-2 bg-white/10 rounded-full z-50 hover:bg-white/20" 
+            title="حفظ الصورة"
+          >
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+          </button>
+
+          <div class="relative max-w-full max-h-full flex items-center justify-center p-4">
+            <img 
+              :src="selectedImage" 
+              class="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl" 
+              @click.stop 
+            />
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -283,6 +311,24 @@ const closeImageModal = () => {
   selectedImage.value = ''
 }
 
+const downloadImage = async () => {
+  try {
+    const response = await fetch(selectedImage.value)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'complaint-image.jpg'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error downloading image:', error)
+    alert('حدث خطأ في تحميل الصورة')
+  }
+}
+
 onMounted(async () => {
   const id = route.params.id
   if (!id) {
@@ -331,4 +377,14 @@ onMounted(async () => {
 
 <style scoped>
 .min-h-\[60px\] { min-height: 60px; }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
