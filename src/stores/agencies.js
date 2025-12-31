@@ -118,7 +118,7 @@ export const useAgenciesStore = defineStore('agencies', () => {
       const { error: responsesError } = await supabase
         .from('responses')
         .delete()
-        .or(`agency_id.eq.${id},agencyId.eq.${id}`)
+        .eq('agency_id', id)
       
       if (responsesError) {
         console.warn('فشل حذف الاستجابات المرتبطة:', responsesError)
