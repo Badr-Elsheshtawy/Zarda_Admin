@@ -43,7 +43,7 @@
             >
               <option value="">جميع الفئات</option>
               <option value="تذاكر">تذاكر</option>
-              <option value="فنادق و تأشيرات">فنادق و تأشيرات</option>
+              <option value="فنادق / تأشيرات">فنادق / تأشيرات</option>
               <option value="مالية">مالية</option>
               
             </select>
@@ -95,7 +95,7 @@
                 <span class="bg-gray-700/50 px-2 py-1 rounded">{{ question.type === 'rating' ? 'تقييم' : question.type === 'text' ? 'نص' : 'اختيار' }}</span>
               </div>
               <div class="flex items-center gap-2 text-sm text-gray-300">
-                <span>الوزن:</span>
+                <span>الترتيب:</span>
                 <span class="text-blue-400">{{ question.weight || 1 }}</span>
               </div>
             </div>
@@ -133,7 +133,7 @@
                 class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
               >
                 <option value="تذاكر">تذاكر</option>
-                <option value="فنادق و تأشيرات">فنادق / تأشيرات</option>
+                <option value="فنادق / تأشيرات">فنادق / تأشيرات</option>
                 <option value="مالية">مالية</option>
               </select>
             </div>
@@ -153,7 +153,7 @@
           </div>
 
           <div>
-            <label class="block text-gray-300 mb-2">الوزن (أهمية السؤال)</label>
+            <label class="block text-gray-300 mb-2">الترتيب (أهمية السؤال)</label>
             <input
               v-model.number="newQuestion.weight"
               type="number"
@@ -223,7 +223,7 @@
           </div>
 
           <div>
-            <label class="block text-gray-300 mb-2">الوزن (أهمية السؤال)</label>
+            <label class="block text-gray-300 mb-2">الترتيب (أهمية السؤال)</label>
             <input
               v-model.number="editQuestionData.weight"
               type="number"

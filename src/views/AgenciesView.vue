@@ -323,10 +323,25 @@ const uploadToSupabase = async (file) => {
 }
 
 const generateSlug = (name) => {
+  // Simple Arabic to Latin transliteration
+  const transliterate = (text) => {
+    const map = {
+      'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'a', 'ء': 'a',
+      'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h',
+      'خ': 'kh', 'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z',
+      'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't',
+      'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+      'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h',
+      'و': 'w', 'ي': 'y', 'ة': 'h', 'ى': 'a', 'ئ': 'i',
+      'ؤ': 'u', 'َ': '', 'ِ': '', 'ُ': '', 'ّ': '', 'ْ': ''
+    }
+    return text.split('').map(char => map[char] || char).join('')
+  }
+
   return (
-    name
+    transliterate(name)
       .toLowerCase()
-      .replace(/[^a-z0-9\u0600-\u06FF\s]/g, '')
+      .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '-')
       .replace(/(^-|-$)/g, '') +
     '-' +
@@ -384,8 +399,8 @@ const deleteAgency = async (agency) => {
 
 const copyLink = (slug) => {
   // Update these URLs based on your actual deployment
-  const localLink = `http://localhost:5173/survey/${slug}`
-  const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
+  const localLink = `http://localhost:5173/survey/${encodeURIComponent(slug)}`
+  const prodLink = `https://zarda-survey.vercel.app/survey/${encodeURIComponent(slug)}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 

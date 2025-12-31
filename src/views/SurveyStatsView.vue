@@ -67,7 +67,7 @@
             </template>
             <template #label>NPS (مؤشر رضا العملاء)</template>
             <template #value>{{ stats.npsScore }}</template>
-            <template #subtitle>النسبة بين المروجين والمنتقدين</template>
+            <template #subtitle>النسبة بين الراضين والمنتقدين</template>
           </StatCard>
         </div>
 
@@ -231,6 +231,7 @@
                   <th class="p-4 text-gray-300">متوسط التقييم</th>
                   <th class="p-4 text-gray-300">NPS</th>
                   <th class="p-4 text-gray-300">التاريخ</th>
+                  <th class="p-4 text-gray-300">الشكاوى</th>
                   <th class="p-4 text-gray-300">تفاصيل</th>
                 </tr>
               </thead>
@@ -242,7 +243,7 @@
                       <span>{{ response.agencyName }}</span>
                     </div>
                   </td>
-                  <td class="p-4">{{ response.employeeName || 'غير محدد' }}</td>
+                  <td class="p-4">{{ response.employee_name || response.employeeName || 'غير محدد' }}</td>
                   <td class="p-4">{{ response.department || '-' }}</td>
                   <td class="p-4">
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">{{ calculateAverageRating(response).toFixed(1) }}/5</span>
@@ -254,7 +255,16 @@
                   </td>
                   <td class="p-4 text-gray-400">{{ formatDate(response.created_at) }}</td>
                   <td class="p-4">
-                    <button @click="openResponseModal(response)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition text-sm">عرض</button>
+                    <div v-if="response.complaints" class="max-w-xs">
+                      <p class="text-sm text-gray-300 truncate" :title="response.complaints">{{ response.complaints }}</p>
+                      <div v-if="response.complaint_images && response.complaint_images.length > 0" class="flex gap-1 mt-1">
+                        <span class="text-xs bg-orange-500/20 text-orange-300 px-2 py-1 rounded">📎 {{ response.complaint_images.length }} صورة</span>
+                      </div>
+                    </div>
+                    <span v-else class="text-gray-500 text-sm">-</span>
+                  </td>
+                  <td class="p-4">
+                    <button @click="viewFilledSurvey(response)" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition text-sm">عرض</button>
                   </td>
                 </tr>
               </tbody>
@@ -281,6 +291,7 @@ import { useResponsesStore } from '@/stores/responses'
 import { useQuestionsStore } from '@/stores/questions'
 import { useAgenciesStore } from '@/stores/agencies'
 import { useStatsStore } from '@/stores/stats'
+import { useRouter } from 'vue-router'
 
 // تسجيل مكونات الرسم البياني (تمت إزالة LineElement و PointElement لأننا حذفنا رسم الاتجاه)
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, Filler)
@@ -290,6 +301,7 @@ const responsesStore = useResponsesStore()
 const questionsStore = useQuestionsStore()
 const agenciesStore = useAgenciesStore()
 const statsStore = useStatsStore()
+const router = useRouter()
 
 const responses = computed(() => responsesStore.all)
 const questions = computed(() => questionsStore.all)
@@ -308,6 +320,11 @@ const selectedRating = ref('')
 function openResponseModal(response) {
   selectedResponse.value = response
   showResponseModal.value = true
+}
+
+function viewFilledSurvey(response) {
+  // عرض الاستبيان مباشرة بالتوجيه إلى صفحة EmployeeSurveyView
+  router.push(`/survey/employee/${response.id}`)
 }
 
 // التحديث التلقائي
@@ -461,7 +478,7 @@ const npsDistributionData = computed(() => {
   })
 
   return {
-    labels: ['مروجون', 'محايدون', 'منتقدون'],
+    labels: ['راضون', 'محايدون', 'منتقدون'],
     datasets: [{
       data: [promoters, passives, detractors],
       backgroundColor: ['#10b981', '#eab308', '#ef4444'],
@@ -567,11 +584,21 @@ const doughnutOptions = {
 }
 
 const calculateAverageRating = (response) => {
-  if (!response.answers || !Array.isArray(response.answers)) return 0
+  if (!response.answers || !Array.isArray(response.answers)) {
+    console.log('No answers array for response:', response.id)
+    return 0
+  }
   const ratings = response.answers
-    .map(answer => answer.rating)
-    .filter(rating => rating !== null && rating !== undefined && rating > 0)
-  return ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0
+    .map(answer => {
+      console.log('Answer:', answer, 'Rating:', answer.rating)
+      return answer.rating
+    })
+    .filter(rating => rating !== null && rating !== undefined && rating !== 0 && rating > 0)
+
+  console.log('Filtered ratings for response', response.id, ':', ratings)
+  const avg = ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0
+  console.log('Average rating for response', response.id, ':', avg)
+  return avg
 }
 
 const calculateNPS = (responses) => {
@@ -587,7 +614,7 @@ const calculateNPS = (responses) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return 'غير محدد'
-  return new Date(dateStr).toLocaleString('ar-SA')
+  return new Date(dateStr).toLocaleString('en-US')
 }
 
 const refreshData = async () => {

@@ -9,18 +9,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { guest: true } // علامة لتمييز صفحة الزوار
-    },
-    {
-      path: '/survey/:slug',
-      name: 'survey',
-      component: () => import('../views/SurveyView.vue'),
-      meta: { guest: true } // الاستطلاع متاح للجميع بدون تسجيل
+      meta: { guest: true }
     },
     {
       path: '/',
-      // التوجيه الافتراضي للداشبورد مباشرة
-      redirect: '/dashboard', 
+      redirect: '/dashboard',
       component: () => import('../components/Sidebar.vue'),
       meta: { requiresAuth: true },
       children: [
@@ -29,7 +22,11 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('../views/DashboardView.vue')
         },
-        // ... بقية المسارات كما هي ...
+        {
+          path: '/survey/employee/:id',
+          name: 'employee-survey',
+          component: () => import('../views/EmployeeSurveyView.vue')
+        },
         {
           path: 'stats',
           name: 'stats',
@@ -60,21 +57,14 @@ const router = createRouter({
   ]
 })
 
-// الحارس (Navigation Guard) المصحح
-router.beforeEach(async (to, from, next) => {
-  // جلب الجلسة الحالية من السيرفر أو الكاش
+router.beforeEach(async (to, _from, next) => {
   const { data: { session } } = await supabase.auth.getSession()
 
-  // 1. إذا الصفحة تتطلب دخول والمستخدم غير مسجل -> وديه للوجن
   if (to.meta.requiresAuth && !session) {
     next('/login')
-  } 
-  // 2. إذا المستخدم مسجل ويحاول يفتح صفحة الوجن -> رجعه للداشبورد (UX أفضل)
-  else if (to.meta.guest && session) {
+  } else if (to.meta.guest && session) {
     next('/')
-  }
-  // 3. كمل عادي
-  else {
+  } else {
     next()
   }
 })
