@@ -115,9 +115,21 @@ export const useAgenciesStore = defineStore('agencies', () => {
   const remove = async (id, logoUrl) => {
     loading.value = true
     try {
+      const { error: responsesError } = await supabase
+        .from('responses')
+        .delete()
+        .or(`agency_id.eq.${id},agencyId.eq.${id}`)
+      
+      if (responsesError) {
+        console.warn('فشل حذف الاستجابات المرتبطة:', responsesError)
+      }
+
       const path = getFilePathFromUrl(logoUrl)
       if (path) {
-        await supabase.storage.from('logos').remove([path])
+        const { error: storageError } = await supabase.storage.from('logos').remove([path])
+        if (storageError) {
+          console.warn('فشل حذف الصورة من التخزين:', storageError)
+        }
       }
 
       const { error: err } = await supabase.from('agencies').delete().eq('id', id)
@@ -125,7 +137,7 @@ export const useAgenciesStore = defineStore('agencies', () => {
 
       items.value = items.value.filter(a => a.id !== id)
     } catch (e) {
-      console.error(e)
+      console.error('خطأ في حذف الوكالة:', e)
       throw e
     } finally {
       loading.value = false

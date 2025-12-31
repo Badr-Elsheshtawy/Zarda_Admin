@@ -1,5 +1,4 @@
 <script setup>
-// ...existing code...
 
 const isAddOpen = ref(false)
 function closeAdd() {

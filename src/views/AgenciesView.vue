@@ -29,6 +29,21 @@
     </div>
 
     <div v-else class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
+      <!-- حقل البحث -->
+      <div class="p-4 border-b border-gray-700 bg-gray-900/30">
+        <div class="relative">
+          <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="البحث في الوكالات..."
+            class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg pr-10 pl-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+          />
+        </div>
+      </div>
+      
       <div class="overflow-x-auto">
         <table class="w-full text-white">
           <thead class="bg-gray-900/50 text-gray-400 text-sm uppercase">
@@ -245,12 +260,13 @@ const previewUrl = ref('')
 const selectedFile = ref(null)
 const toastMsg = ref('')
 const imageError = ref('') 
+const searchQuery = ref('')
 
 const agencyForm = ref({ name: '', targetEmployees: '', logoUrl: '', slug: '' })
 const editingAgency = ref(null)
 
 const agenciesWithResponses = computed(() => {
-  return agenciesStore.all.map((agency) => {
+  let agencies = agenciesStore.all.map((agency) => {
     const responses = responsesStore.all.filter((r) => r.agencyId === agency.id || r.agency_id === agency.id).length
     const target = agency.targetEmployees || 1
     return {
@@ -259,6 +275,15 @@ const agenciesWithResponses = computed(() => {
       completionRate: (responses / target) * 100,
     }
   })
+
+  const query = searchQuery.value.trim().toLowerCase()
+  if (query) {
+    agencies = agencies.filter(agency => 
+      agency.name && agency.name.toLowerCase().includes(query)
+    )
+  }
+
+  return agencies
 })
 
 onMounted(async () => {
@@ -384,9 +409,14 @@ const editAgency = (agency) => {
 }
 
 const deleteAgency = async (agency) => {
-  if (confirm('⚠️ هل أنت متأكد؟ سيتم حذف الوكالة والصورة وجميع البيانات المرتبطة.')) {
-    await agenciesStore.remove(agency.id, agency.logoUrl)
-    showToast('🗑️ تم الحذف')
+  if (confirm(`⚠️ هل أنت متأكد من حذف الوكالة "${agency.name}"؟ سيتم حذف الوكالة والصورة وجميع الاستجابات والإحصائيات المرتبطة بها نهائياً.`)) {
+    try {
+      await agenciesStore.remove(agency.id, agency.logoUrl)
+      showToast('🗑️ تم حذف الوكالة وجميع البيانات المرتبطة بها')
+    } catch (error) {
+      console.error('خطأ في الحذف:', error)
+      alert('حدث خطأ أثناء الحذف: ' + error.message)
+    }
   }
 }
 
