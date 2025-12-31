@@ -13,7 +13,6 @@ const siteVisitors = ref(0)
 
 const fetchStats = async () => {
   try {
-    // جلب العروض من supabase
     const { data: pkgs, error: pkgErr } = await supabase
       .from('packages')
       .select('*')
@@ -24,13 +23,13 @@ const fetchStats = async () => {
       active: typeof p.active === 'boolean' ? p.active : true
     }))
 
-    // جلب إحصائيات الزوار من supabase
     const { data: stats, error: statsErr } = await supabase
       .from('stats')
-      .select('visitors')
-      .eq('id', 1)
-      .single()
-    if (!statsErr && stats) siteVisitors.value = stats.visitors || 0
+      .select('*')
+    if (!statsErr && stats) {
+      const siteStats = stats.find(s => s.id === 'site')
+      if (siteStats) siteVisitors.value = siteStats.visitors || 0
+    }
   } finally {
     loading.value = false
   }

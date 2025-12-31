@@ -7,9 +7,7 @@ export const useStatsStore = defineStore('stats', () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // نحتاج فقط عدد الزوار حالياً
   const visitors = computed(() => {
-    // نبحث عن الإحصائية التي تحمل id = 'site'
     const siteStats = items.value.find(s => s.id === 'site')
     return siteStats ? siteStats.visitors : 0
   })

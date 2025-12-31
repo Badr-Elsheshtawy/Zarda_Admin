@@ -27,7 +27,6 @@
       </div>
 
       <div v-else-if="response" class="space-y-8">
-        <!-- معلومات الاستبيان -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +53,6 @@
           </div>
         </div>
 
-        <!-- الأسئلة والإجابات -->
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,7 +99,6 @@
           </div>
         </div>
 
-        <!-- تقييم NPS -->
         <div v-if="response.final_nps !== undefined && response.final_nps !== null" class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +122,6 @@
           </div>
         </div>
 
-        <!-- الشكاوى والمقترحات -->
         <div v-if="response.complaints || (response.complaint_images && response.complaint_images.length > 0)" class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
           <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
             <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +166,6 @@
         <p>لم يتم العثور على الاستبيان المطلوب</p>
       </div>
 
-      <!-- Modal لعرض الصور -->
       <div v-if="showImageModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" @click="closeImageModal">
         <div class="relative max-w-4xl max-h-full">
           <img :src="selectedImage" class="max-w-full max-h-full object-contain rounded-lg" />
@@ -203,7 +198,6 @@ const filteredQuestions = computed(() => {
   if (!questions.value || !response.value || !response.value.answers) return []
   const answers = response.value.answers
 
-  // استخرج جميع questionId التي تمت الإجابة عليها
   let answeredIds = []
   if (Array.isArray(answers)) {
     answeredIds = answers.map(a => a.questionId?.toString())
@@ -297,7 +291,6 @@ onMounted(async () => {
   }
 
   try {
-    // جلب الرد
     const { data: resp, error: respError } = await supabase
       .from('responses')
       .select('*')
@@ -307,7 +300,6 @@ onMounted(async () => {
     if (respError) throw respError
     response.value = resp
 
-    // جلب الوكالة
     if (resp && resp.agency_id) {
       const { data: agency, error: agencyError } = await supabase
         .from('agencies')
@@ -321,7 +313,6 @@ onMounted(async () => {
       }
     }
 
-    // جلب الأسئلة
     const { data: qs, error: qsError } = await supabase
       .from('questions')
       .select('*')

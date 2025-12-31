@@ -293,10 +293,8 @@ import { useAgenciesStore } from '@/stores/agencies'
 import { useStatsStore } from '@/stores/stats'
 import { useRouter } from 'vue-router'
 
-// تسجيل مكونات الرسم البياني (تمت إزالة LineElement و PointElement لأننا حذفنا رسم الاتجاه)
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, Filler)
 
-// استدعاء الـ Stores
 const responsesStore = useResponsesStore()
 const questionsStore = useQuestionsStore()
 const agenciesStore = useAgenciesStore()
@@ -308,11 +306,9 @@ const questions = computed(() => questionsStore.all)
 const agencies = computed(() => agenciesStore.all)
 const loading = computed(() => responsesStore.loading || questionsStore.loading || agenciesStore.loading || statsStore.loading)
 
-// حالة المودال
 const showResponseModal = ref(false)
 const selectedResponse = ref(null)
 
-// فلاتر إحصائيات الأسئلة
 const selectedQuestionType = ref('')
 const selectedAgency = ref('')
 const selectedRating = ref('')
@@ -323,11 +319,9 @@ function openResponseModal(response) {
 }
 
 function viewFilledSurvey(response) {
-  // عرض الاستبيان مباشرة بالتوجيه إلى صفحة EmployeeSurveyView
   router.push(`/survey/employee/${response.id}`)
 }
 
-// التحديث التلقائي
 let refreshInterval = null
 
 const startAutoRefresh = () => {
@@ -351,18 +345,14 @@ const handleVisibilityChange = async () => {
   }
 }
 
-// --- الحسابات والإحصائيات ---
 
-// دالة مساعدة لجلب اسم الوكالة
 const getAgencyName = (id) => {
   const agency = agenciesStore.byId(id)
   return agency ? agency.name : 'غير معروف'
 }
 
-// تعزيز كائنات الردود ببيانات الوكالة لسهولة الفلترة
 const enrichedResponses = computed(() => {
   return responses.value.map(r => {
-    // حاول الحصول على اسم الوكالة من الرد نفسه، أو ابحث عنه في الستور
     const agencyName = r.agencyName || r.agency_name || getAgencyName(r.agencyId || r.agency_id)
     return {
       ...r,
@@ -377,7 +367,6 @@ const stats = computed(() => {
   const completionRate = totalResponses ? Math.round((enrichedResponses.value.filter(r => r.completed !== false).length / totalResponses) * 100) : 0
   const npsScore = calculateNPS(enrichedResponses.value)
 
-  // إحصائيات الوكالات
   const agencyStats = {}
   enrichedResponses.value.forEach(response => {
     const aId = response.agencyId || response.agency_id
@@ -410,7 +399,6 @@ const stats = computed(() => {
   }
 })
 
-// بيانات الرسوم البيانية
 const ratingDistributionData = computed(() => {
   const distribution = [0, 0, 0, 0, 0]
   enrichedResponses.value.forEach(response => {
@@ -432,10 +420,8 @@ const ratingDistributionData = computed(() => {
 })
 
 const categorySatisfactionData = computed(() => {
-  // الأقسام الثلاثة المحددة
   const targetCategories = ['تذاكر', 'فنادق / تأشيرات', 'مالية']
   const categoryStats = {}
-  // تجهيز نسخة مطابقة للأقسام (بدون فراغات وبأحرف صغيرة)
   const normalizedTargets = targetCategories.map(cat => cat.trim().toLowerCase())
   targetCategories.forEach(cat => {
     categoryStats[cat] = { total: 0, count: 0 }
@@ -487,24 +473,20 @@ const npsDistributionData = computed(() => {
   }
 })
 
-// إحصائيات الأسئلة مع الفلاتر (Logic Corrected)
 const filteredQuestionsStats = computed(() => {
   let filteredQuestions = questions.value
   
-  // 1. فلترة الأسئلة حسب النوع
   if (selectedQuestionType.value) {
     filteredQuestions = filteredQuestions.filter(q => q.type === selectedQuestionType.value)
   }
 
   return filteredQuestions.map(q => {
-    // 2. فلترة الردود بناءً على الوكالة والتقييم المختارين
     let relevantResponses = enrichedResponses.value
 
     if (selectedAgency.value) {
       relevantResponses = relevantResponses.filter(r => r.agencyName === selectedAgency.value)
     }
 
-    // إذا كان الفلتر تقييم، والأسئلة ليست من نوع تقييم، هذا الفلتر قد لا يكون منطقياً، لكن سنطبقه على أسئلة التقييم فقط
     if (selectedRating.value && q.type === 'rating') {
       relevantResponses = relevantResponses.filter(r => {
         if (!r.answers || !Array.isArray(r.answers)) return false
@@ -513,14 +495,12 @@ const filteredQuestionsStats = computed(() => {
       })
     }
 
-    // 3. استخراج الإجابات من الردود المفلترة
     const answersForQ = relevantResponses.map(r => {
       if (!r.answers || !Array.isArray(r.answers)) return null
       const found = r.answers.find(a => a.questionId == q.id || a.question == q.text)
       
       if (!found) return null
 
-      // معالجة أسئلة التقييم لتحويل الأرقام لنص
       if (q.type === 'rating' && found.rating) {
          if (found.rating == 5) return 'ممتاز (5)'
          if (found.rating == 4) return 'جيد (4)'
@@ -533,9 +513,7 @@ const filteredQuestionsStats = computed(() => {
       return found.text || found.choice || found.rating || ''
     }).filter(val => val !== null && val !== '')
 
-    // 4. تجميع النتائج
-    // بالنسبة للتقييم، نفضل عرض الخيارات الثابتة حتى لو كانت 0
-    let optionsToCount = []
+    let optionsToCount
     if (q.type === 'rating') {
         optionsToCount = ['ممتاز (5)', 'جيد (4)', 'محايد (3)', 'مقبول (2)', 'سيئ (1)']
     } else {
@@ -561,7 +539,6 @@ const filteredRecentResponses = computed(() => {
     .slice(0, 10)
 })
 
-// خيارات الرسوم البيانية
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,

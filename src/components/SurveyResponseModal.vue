@@ -38,7 +38,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 
-const router = useRouter?.() // fallback for non-router context
+const router = useRouter?.() 
 
 function openFullSurvey() {
   const data = btoa(unescape(encodeURIComponent(JSON.stringify(response))))

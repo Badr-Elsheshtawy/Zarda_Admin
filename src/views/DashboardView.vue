@@ -168,7 +168,6 @@ import PageHeader from '@/components/PageHeader.vue'
 import StatCard from '@/components/StatCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
-// Import Stores
 import { useAdminPackagesStore } from '@/stores/packages'
 import { useStatsStore } from '@/stores/stats'
 import { useResponsesStore } from '@/stores/responses'
@@ -179,7 +178,6 @@ const responsesStore = useResponsesStore()
 
 const loading = ref(true)
 
-// ربط البيانات بالـ Stores
 const packages = computed(() => packagesStore.all)
 const siteVisitors = computed(() => statsStore.visitors)
 
@@ -211,7 +209,6 @@ const stats = computed(() => {
 
 const recentPackages = computed(() => {
   return [...packages.value]
-    // استخدام Date مباشر للتعامل مع نصوص Supabase
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6)
 })
@@ -222,7 +219,7 @@ const fetchData = async () => {
     await Promise.all([
       packagesStore.fetchAll({ force: true }),
       statsStore.fetchAll({ force: true }),
-      responsesStore.fetchAll({ force: true }) // لجلب بيانات الردود إذا لزم
+      responsesStore.fetchAll({ force: true })
     ])
   } catch (error) {
     console.error('Error fetching dashboard data:', error)

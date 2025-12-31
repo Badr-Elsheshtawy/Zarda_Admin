@@ -15,7 +15,7 @@ export const useQuestionsStore = defineStore('questions', () => {
       const { data, error: err } = await supabase
         .from('questions')
         .select('*')
-        .order('order', { ascending: true }) // ترتيب حسب order
+        .order('order', { ascending: true }) 
 
       if (err) throw err
       items.value = data
@@ -30,12 +30,10 @@ export const useQuestionsStore = defineStore('questions', () => {
   const add = async (qData) => {
     loading.value = true
     try {
-      // تجهيز البيانات لتطابق أعمدة الجدول في Supabase
       const payload = {
         text: qData.text,
         category: qData.category,
         type: qData.type,
-        // التصحيح هنا: نستخدم 'order' بدلاً من 'weight'
         order: qData.weight || qData.order || 0 
       }
 

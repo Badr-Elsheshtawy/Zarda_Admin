@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue'
-import { supabase } from '../supabase' // تأكد من المسار
+import { supabase } from '../supabase' 
 import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
 const error = ref('')
-const loading = ref(false) // إضافة حالة التحميل
+const loading = ref(false) 
 const router = useRouter()
 
 const handleLogin = async () => {
@@ -14,7 +14,6 @@ const handleLogin = async () => {
   error.value = ''
   
   try {
-    // 1. استخدام دالة Supabase بدلاً من Firebase
     const { data, error: authError } = await supabase.auth.signInWithPassword({
       email: email.value,
       password: password.value
@@ -22,7 +21,6 @@ const handleLogin = async () => {
 
     if (authError) throw authError
 
-    // 2. التحقق من وجود المستخدم وتوجيهه
     if (data.user) {
       router.push('/') 
     }

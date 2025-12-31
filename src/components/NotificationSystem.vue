@@ -54,7 +54,6 @@ const addNotification = (title, message, type = 'info', duration = 5000) => {
 
   notifications.value.push(notification)
 
-  // Auto remove after duration
   const interval = setInterval(() => {
     notification.progress -= 100 / (duration / 100)
     if (notification.progress <= 0) {
@@ -101,10 +100,8 @@ const getNotificationIcon = (type) => {
   return icons[type] || icons.info
 }
 
-// Expose addNotification function to parent components
 defineExpose({ addNotification })
 
-// Auto cleanup on unmount
 onMounted(() => {
   return () => {
     notifications.value = []

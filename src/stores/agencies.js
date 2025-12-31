@@ -10,7 +10,6 @@ export const useAgenciesStore = defineStore('agencies', () => {
   const all = computed(() => items.value)
   const byId = (id) => items.value.find(a => a.id === id)
 
-  // تحويل البيانات
   const mapData = (data) => ({
     id: data.id,
     name: data.name,
@@ -20,11 +19,8 @@ export const useAgenciesStore = defineStore('agencies', () => {
     createdAt: data.created_at
   })
 
-  // دالة مساعدة لاستخراج اسم الملف من الرابط للحذف
   const getFilePathFromUrl = (url) => {
     if (!url) return null
-    // الرابط عادة يكون: .../public/logos/filename.png
-    // نحن نحتاج ما بعد كلمة 'logos/'
     const parts = url.split('/logos/')
     return parts.length > 1 ? parts[1] : null
   }
@@ -71,22 +67,16 @@ export const useAgenciesStore = defineStore('agencies', () => {
     }
   }
 
-  // ==========================================
-  // 🔴 هنا التعديل الجوهري لحذف الصورة القديمة
-  // ==========================================
   const update = async (id, updates) => {
     loading.value = true
     try {
-      // 1. العثور على الوكالة الحالية قبل التعديل لمعرفة الصورة القديمة
       const currentAgency = items.value.find(a => a.id === id)
       const oldLogoUrl = currentAgency?.logoUrl
 
-      // 2. التحقق: هل يتم تحديث الصورة؟ وهل هي مختلفة عن القديمة؟
       if (updates.logoUrl && oldLogoUrl && updates.logoUrl !== oldLogoUrl) {
         const oldPath = getFilePathFromUrl(oldLogoUrl)
         
         if (oldPath) {
-          // حذف الملف القديم من Supabase Storage
           const { error: deleteErr } = await supabase.storage
             .from('logos')
             .remove([oldPath])
@@ -96,7 +86,6 @@ export const useAgenciesStore = defineStore('agencies', () => {
         }
       }
 
-      // 3. تحديث البيانات في قاعدة البيانات
       const dbUpdates = {}
       if (updates.name) dbUpdates.name = updates.name
       if (updates.targetEmployees) dbUpdates.target_employees = updates.targetEmployees
@@ -111,7 +100,6 @@ export const useAgenciesStore = defineStore('agencies', () => {
 
       if (err) throw err
 
-      // 4. تحديث القائمة المحلية
       const index = items.value.findIndex(a => a.id === id)
       if (index !== -1 && data.length) {
         items.value[index] = { ...items.value[index], ...mapData(data[0]) }
@@ -127,7 +115,6 @@ export const useAgenciesStore = defineStore('agencies', () => {
   const remove = async (id, logoUrl) => {
     loading.value = true
     try {
-      // حذف الصورة عند حذف الوكالة كلياً
       const path = getFilePathFromUrl(logoUrl)
       if (path) {
         await supabase.storage.from('logos').remove([path])
@@ -146,8 +133,6 @@ export const useAgenciesStore = defineStore('agencies', () => {
   }
   
   const fetchBySlug = async (slug) => {
-    /* ... نفس الكود السابق ... */
-    // للتذكير: لا تغيير هنا، لكن أبقها كما هي في ملفك
     loading.value = true;
     const current = ref(null);
     try {

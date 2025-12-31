@@ -232,7 +232,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAgenciesStore } from '@/stores/agencies'
 import { useResponsesStore } from '@/stores/responses'
-import { supabase } from '@/supabase' // Import Supabase
+import { supabase } from '@/supabase' 
 import PageHeader from '@/components/PageHeader.vue'
 
 const agenciesStore = useAgenciesStore()
@@ -244,7 +244,7 @@ const loadingData = ref(true)
 const previewUrl = ref('')
 const selectedFile = ref(null)
 const toastMsg = ref('')
-const imageError = ref('') // Added for image error handling
+const imageError = ref('') 
 
 const agencyForm = ref({ name: '', targetEmployees: '', logoUrl: '', slug: '' })
 const editingAgency = ref(null)
@@ -275,14 +275,12 @@ const getProgressColor = (rate) => {
   return 'bg-yellow-500'
 }
 
-// Updated File Handler for Supabase
 const handleFileChange = async (event) => {
   const file = event.target.files[0]
   imageError.value = ''
   
   if (!file) return
 
-  // Check file size (2MB limit)
   if (file.size > 2 * 1024 * 1024) {
     imageError.value = '⚠️ حجم الصورة كبير جداً! الحد الأقصى 2MB.'
     return
@@ -290,7 +288,6 @@ const handleFileChange = async (event) => {
 
   selectedFile.value = file
   
-  // Create local preview
   const reader = new FileReader()
   reader.onload = (e) => {
     previewUrl.value = e.target.result
@@ -298,7 +295,6 @@ const handleFileChange = async (event) => {
   reader.readAsDataURL(file)
 }
 
-// Upload function for Supabase Storage
 const uploadToSupabase = async (file) => {
   try {
     const fileExt = file.name.split('.').pop()
@@ -323,7 +319,6 @@ const uploadToSupabase = async (file) => {
 }
 
 const generateSlug = (name) => {
-  // Simple Arabic to Latin transliteration
   const transliterate = (text) => {
     const map = {
       'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'a', 'ء': 'a',
@@ -354,7 +349,6 @@ const saveAgency = async () => {
   try {
     let logoUrl = agencyForm.value.logoUrl
     
-    // Upload if a new file is selected
     if (selectedFile.value) {
       logoUrl = await uploadToSupabase(selectedFile.value)
     }
@@ -391,14 +385,12 @@ const editAgency = (agency) => {
 
 const deleteAgency = async (agency) => {
   if (confirm('⚠️ هل أنت متأكد؟ سيتم حذف الوكالة والصورة وجميع البيانات المرتبطة.')) {
-    // Pass both ID and logo URL for cleanup
     await agenciesStore.remove(agency.id, agency.logoUrl)
     showToast('🗑️ تم الحذف')
   }
 }
 
 const copyLink = (slug) => {
-  // Update these URLs based on your actual deployment
   const localLink = `http://localhost:5173/survey/${encodeURIComponent(slug)}`
   const prodLink = `https://zarda-survey.vercel.app/survey/${encodeURIComponent(slug)}`
 

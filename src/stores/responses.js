@@ -12,19 +12,16 @@ export const useResponsesStore = defineStore('responses', () => {
   const fetchAll = async () => {
     loading.value = true
     try {
-      // جلب الردود مع بيانات الوكالة (Join) إذا كنت تحتاج اسم الوكالة
-      // هنا سنفترض أننا نجلب الردود فقط
       const { data, error: err } = await supabase
         .from('responses')
         .select(`
           *,
           agencies!inner(name, logo_url)
-        `) // استخدام inner join لضمان وجود الوكالة
+        `) 
         .order('created_at', { ascending: false })
 
       if (err) throw err
       
-      // تحسين شكل البيانات لسهولة الاستخدام
       items.value = data.map(r => ({
         ...r,
         agencyName: r.agencies?.name || 'غير معروف',

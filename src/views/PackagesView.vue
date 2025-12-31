@@ -8,8 +8,7 @@ function closeAdd() {
 import { ref, onMounted, computed } from 'vue'
 import { supabase } from '../supabase'
 import { useAdminPackagesStore } from '@/stores/packages'
-import { CLOUD_NAME, UPLOAD_PRESET, UPLOAD_FOLDER } from '@/config/cloudinary'
-import PageHeader from '@/components/PageHeader.vue'
+ import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Modal from '@/components/Modal.vue'
 
@@ -184,45 +183,9 @@ const removeImage = (index) => {
   }
 }
 
-const uploadImagesToCloudinary = async () => {
-  const uploadedUrls = []
-  for (const file of imageFiles.value) {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', UPLOAD_PRESET)
-    formData.append('folder', UPLOAD_FOLDER)
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData })
-    const data = await res.json()
-    if (!res.ok || !data.secure_url) {
-      const msg = data?.error?.message || 'فشل رفع الصورة إلى Cloudinary'
-      throw new Error(msg)
-    }
-    uploadedUrls.push(data.secure_url)
-  }
-  return uploadedUrls
-}
+ 
 
-const addPackage = async () => {
-  if (!form.value.title || !form.value.price) { alert('الرجاء تعبئة البيانات!'); return }
-  loading.value = true; message.value = 'جاري الرفع...'
-  try {
-    let finalImageLinks = []
-    if (imageFiles.value.length > 0) finalImageLinks = await uploadImagesToCloudinary()
-    
-    await store.add({
-      ...form.value,
-      price: Number(form.value.price),
-      images: finalImageLinks,
-      image: finalImageLinks[primaryImageIndex.value] ?? finalImageLinks[0] ?? '',
-      views: 0
-    })
-    message.value = '✅ تم النشر!'
-    form.value = { title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', isFeatured: false, active: true }
-    imageFiles.value = []; imageUrls.value = []
-    isAddOpen.value = false
-  } catch (err) { message.value = '❌ خطأ: ' + err.message } 
-  finally { loading.value = false }
-}
+ 
 
 const fetchPackages = async () => { await store.fetchAll({ force: true }) }
 
@@ -261,36 +224,7 @@ const openEdit = (pkg) => {
   primaryEditIndex.value = idx !== -1 ? idx : 0
 }
 
-const saveEdit = async () => {
-  if (!editingId.value) return
-  loading.value = true
-  message.value = 'جاري حفظ التعديلات...'
-  try {
-    let finalImageLinks = []
-    if (imageFiles.value.length > 0) {
-      finalImageLinks = await uploadImagesToCloudinary()
-    } else {
-      finalImageLinks = Array.isArray(imageUrls.value) ? imageUrls.value.filter(Boolean) : []
-    }
-
-    await store.update(editingId.value, {
-      ...editForm.value,
-      price: Number(editForm.value.price),
-      images: finalImageLinks,
-      image: (finalImageLinks.length ? (finalImageLinks[primaryEditIndex.value] ?? finalImageLinks[0]) : (editForm.value.image || ''))
-    })
-
-    message.value = '✅ تم حفظ التعديلات!'
-    isEditOpen.value = false
-    editingId.value = null
-    imageFiles.value = []
-    imageUrls.value = []
-  } catch (err) {
-    message.value = '❌ خطأ: ' + err.message
-  } finally {
-    loading.value = false
-  }
-}
+ 
 
 const openAdd = () => {
   isAddOpen.value = true
