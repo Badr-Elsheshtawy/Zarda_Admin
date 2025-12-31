@@ -4,6 +4,7 @@ import { supabase } from '@/supabase'
 
 export const useAgenciesStore = defineStore('agencies', () => {
   const items = ref([])
+  const current = ref(null) 
   const loading = ref(false)
   const error = ref(null)
 
@@ -24,6 +25,7 @@ export const useAgenciesStore = defineStore('agencies', () => {
     const parts = url.split('/logos/')
     return parts.length > 1 ? parts[1] : null
   }
+
 
   const fetchAll = async () => {
     loading.value = true
@@ -70,8 +72,8 @@ export const useAgenciesStore = defineStore('agencies', () => {
   const update = async (id, updates) => {
     loading.value = true
     try {
-      const currentAgency = items.value.find(a => a.id === id)
-      const oldLogoUrl = currentAgency?.logoUrl
+      const currentAgencyInList = items.value.find(a => a.id === id)
+      const oldLogoUrl = currentAgencyInList?.logoUrl
 
       if (updates.logoUrl && oldLogoUrl && updates.logoUrl !== oldLogoUrl) {
         const oldPath = getFilePathFromUrl(oldLogoUrl)
@@ -104,6 +106,11 @@ export const useAgenciesStore = defineStore('agencies', () => {
       if (index !== -1 && data.length) {
         items.value[index] = { ...items.value[index], ...mapData(data[0]) }
       }
+      
+      if (current.value && current.value.id === id) {
+        current.value = { ...current.value, ...mapData(data[0]) }
+      }
+
     } catch (e) {
       console.error('update error:', e)
       throw e
@@ -120,22 +127,21 @@ export const useAgenciesStore = defineStore('agencies', () => {
         .delete()
         .eq('agency_id', id)
       
-      if (responsesError) {
-        console.warn('فشل حذف الاستجابات المرتبطة:', responsesError)
-      }
+      if (responsesError) console.warn('تنبيه: فشل حذف الاستجابات المرتبطة (قد تكون محذوفة بالفعل):', responsesError)
 
       const path = getFilePathFromUrl(logoUrl)
       if (path) {
-        const { error: storageError } = await supabase.storage.from('logos').remove([path])
-        if (storageError) {
-          console.warn('فشل حذف الصورة من التخزين:', storageError)
-        }
+        await supabase.storage.from('logos').remove([path])
       }
 
       const { error: err } = await supabase.from('agencies').delete().eq('id', id)
       if (err) throw err
 
       items.value = items.value.filter(a => a.id !== id)
+      if (current.value && current.value.id === id) {
+        current.value = null
+      }
+      
     } catch (e) {
       console.error('خطأ في حذف الوكالة:', e)
       throw e
@@ -145,24 +151,39 @@ export const useAgenciesStore = defineStore('agencies', () => {
   }
   
   const fetchBySlug = async (slug) => {
-    loading.value = true;
-    const current = ref(null);
+    loading.value = true
+    error.value = null
+    current.value = null 
+
     try {
         const { data, error: err } = await supabase
             .from('agencies')
             .select('*')
             .eq('slug', slug)
-            .single();
+            .single()
 
-        if (err) throw err;
-        current.value = mapData(data);
+        if (err) throw err
+        
+        current.value = mapData(data)
     } catch (e) {
-        error.value = 'الرابط غير صحيح';
+        console.error(e)
+        error.value = 'الرابط غير صحيح أو الوكالة غير موجودة'
     } finally {
-        loading.value = false;
+        loading.value = false
     }
-    return { current, error };
-  };
+  }
 
-  return { all, byId, loading, error, fetchAll, add, update, remove, fetchBySlug }
+  return { 
+    items, 
+    current, 
+    loading, 
+    error, 
+    all, 
+    byId, 
+    fetchAll, 
+    add, 
+    update, 
+    remove, 
+    fetchBySlug 
+  }
 })
