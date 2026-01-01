@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white font-sans" dir="rtl">
+  <div>
+    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white font-sans" dir="rtl">
     <div class="container mx-auto px-6 py-8">
       <PageHeader>
         <template #icon>
@@ -48,13 +49,39 @@
               
             </select>
           </div>
+          <div class="mt-4 p-3 bg-blue-500/10 border border-blue-400/20 rounded-lg">
+            <div class="flex items-center gap-2 text-blue-300 text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+              </svg>
+              <span>استخدم أزرار السهم لتغيير ترتيب الأسئلة</span>
+            </div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-if="filterCategory" class="bg-blue-500/10 backdrop-blur-lg rounded-2xl p-4 border border-blue-400/20 shadow-2xl">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+            <span class="text-blue-200">استخدم أزرار السهم لتغيير ترتيب الأسئلة داخل فئة "{{ filterCategory }}" فقط</span>
+          </div>
+        </div>
+
+        <div v-else class="bg-blue-500/10 backdrop-blur-lg rounded-2xl p-4 border border-blue-400/20 shadow-2xl">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+            </svg>
+            <span class="text-blue-200">استخدم أزرار السهم لتغيير ترتيب الأسئلة</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="questions-container">
           <div
-            v-for="question in filteredQuestions"
+            v-for="(question, index) in filteredQuestions"
             :key="question.id"
-            class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl hover:border-white/30 transition-all duration-300 group"
+            class="question-card bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl hover:border-white/30 transition-all duration-300 group"
           >
             <div class="flex items-start justify-between mb-4">
               <div class="flex items-center gap-3">
@@ -65,9 +92,30 @@
                 </div>
                 <div>
                   <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">{{ question.category }}</span>
+                  <span class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full ml-2">{{ getCategoryOrder(question) }}</span>
                 </div>
               </div>
               <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex flex-col gap-1">
+                  <button
+                    @click="moveQuestionUp(question)"
+                    :disabled="getCategoryOrder(question) === 1"
+                    class="p-1 bg-blue-500/20 hover:bg-blue-500/30 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                    </svg>
+                  </button>
+                  <button
+                    @click="moveQuestionDown(question)"
+                    :disabled="getCategoryOrder(question) === getMaxOrderInCategory(question.category)"
+                    class="p-1 bg-blue-500/20 hover:bg-blue-500/30 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                  </button>
+                </div>
                 <button
                   @click="editQuestion(question)"
                   class="p-2 bg-yellow-500/20 hover:bg-yellow-500/30 rounded-lg transition"
@@ -96,7 +144,7 @@
               </div>
               <div class="flex items-center gap-2 text-sm text-gray-300">
                 <span>الترتيب:</span>
-                <span class="text-blue-400">{{ question.weight || 1 }}</span>
+                <span class="text-blue-400">{{ question.order || index + 1 }}</span>
               </div>
             </div>
           </div>
@@ -153,14 +201,15 @@
           </div>
 
           <div>
-            <label class="block text-gray-300 mb-2">الترتيب (أهمية السؤال)</label>
+            <label class="block text-gray-300 mb-2">الترتيب (سيتم تحديثه تلقائياً عند السحب والإفلات)</label>
             <input
-              v-model.number="newQuestion.weight"
+              :value="nextOrder"
               type="number"
               min="1"
-              max="10"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+              readonly
+              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none cursor-not-allowed"
             >
+            <p class="text-xs text-gray-400 mt-1">السؤال الجديد سيتم إضافته في النهاية</p>
           </div>
 
           <div class="flex gap-4">
@@ -223,14 +272,15 @@
           </div>
 
           <div>
-            <label class="block text-gray-300 mb-2">الترتيب (أهمية السؤال)</label>
+            <label class="block text-gray-300 mb-2">الترتيب (سيتم تحديثه تلقائياً عند السحب والإفلات)</label>
             <input
-              v-model.number="editQuestionData.weight"
+              v-model.number="editQuestionData.order"
               type="number"
               min="1"
-              max="10"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+              readonly
+              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none cursor-not-allowed"
             >
+            <p class="text-xs text-gray-400 mt-1">استخدم السحب والإفلات لتغيير الترتيب</p>
           </div>
 
           <div class="flex gap-4">
@@ -253,6 +303,8 @@
       </Modal>
     </div>
   </div>
+  <NotificationSystem ref="notificationSystem" />
+  </div>
 </template>
 
 <script setup>
@@ -261,6 +313,7 @@ import { useQuestionsStore } from '@/stores/questions'
 import PageHeader from '@/components/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Modal from '@/components/Modal.vue'
+import NotificationSystem from '@/components/NotificationSystem.vue'
 
 const questionsStore = useQuestionsStore()
 const showAddModal = ref(false)
@@ -268,12 +321,12 @@ const showEditModal = ref(false)
 const searchQuery = ref('')
 const filterCategory = ref('')
 const loading = computed(() => questionsStore.loading)
+const notificationSystem = ref(null)
 
 const newQuestion = ref({
   text: '',
   category: 'General',
-  type: 'rating',
-  weight: 1
+  type: 'rating'
 })
 
 const editQuestionData = ref({
@@ -281,7 +334,7 @@ const editQuestionData = ref({
   text: '',
   category: 'General',
   type: 'rating',
-  weight: 1
+  order: 1
 })
 
 const filteredQuestions = computed(() => {
@@ -300,6 +353,96 @@ const filteredQuestions = computed(() => {
   return questions
 })
 
+const nextOrder = computed(() => {
+  if (!newQuestion.value.category) return 1
+
+  const categoryQuestions = questionsStore.all.filter(q => q.category === newQuestion.value.category)
+  return categoryQuestions.length + 1
+})
+
+const getCategoryOrder = (question) => {
+  const categoryQuestions = questionsStore.all
+    .filter(q => q.category === question.category)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+  
+  const index = categoryQuestions.findIndex(q => q.id === question.id)
+  return index + 1
+}
+
+const getMaxOrderInCategory = (category) => {
+  const categoryQuestions = questionsStore.all.filter(q => q.category === category)
+  return categoryQuestions.length
+}
+
+const moveQuestionUp = async (question) => {
+  const currentOrder = getCategoryOrder(question)
+  if (currentOrder <= 1) return
+
+  const categoryQuestions = questionsStore.all
+    .filter(q => q.category === question.category)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+
+  const currentIndex = categoryQuestions.findIndex(q => q.id === question.id)
+  const aboveQuestion = categoryQuestions[currentIndex - 1]
+
+  if (!aboveQuestion) return
+
+  const newCategoryQuestions = [...categoryQuestions]
+  newCategoryQuestions.splice(currentIndex, 1)
+  const newIndex = currentIndex - 1
+  newCategoryQuestions.splice(newIndex, 0, question)
+
+  for (let i = 0; i < newCategoryQuestions.length; i++) {
+    await questionsStore.update(newCategoryQuestions[i].id, { order: i + 1 })
+  }
+
+  await questionsStore.fetchAll()
+
+  const categoryText = filterCategory.value ? `فئة "${filterCategory.value}"` : 'جميع الأسئلة'
+  if (notificationSystem.value) {
+    notificationSystem.value.addNotification(
+      'تم تحديث الترتيب',
+      `تم نقل السؤال لأعلى في ${categoryText}`,
+      'success'
+    )
+  }
+}
+
+const moveQuestionDown = async (question) => {
+  const currentOrder = getCategoryOrder(question)
+  const maxOrder = getMaxOrderInCategory(question.category)
+  if (currentOrder >= maxOrder) return
+
+  const categoryQuestions = questionsStore.all
+    .filter(q => q.category === question.category)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+
+  const currentIndex = categoryQuestions.findIndex(q => q.id === question.id)
+  const belowQuestion = categoryQuestions[currentIndex + 1]
+
+  if (!belowQuestion) return
+
+  const newCategoryQuestions = [...categoryQuestions]
+  newCategoryQuestions.splice(currentIndex, 1)
+  const newIndex = currentIndex + 1
+  newCategoryQuestions.splice(newIndex, 0, question)
+
+  for (let i = 0; i < newCategoryQuestions.length; i++) {
+    await questionsStore.update(newCategoryQuestions[i].id, { order: i + 1 })
+  }
+
+  await questionsStore.fetchAll()
+
+  const categoryText = filterCategory.value ? `فئة "${filterCategory.value}"` : 'جميع الأسئلة'
+  if (notificationSystem.value) {
+    notificationSystem.value.addNotification(
+      'تم تحديث الترتيب',
+      `تم نقل السؤال لأسفل في ${categoryText}`,
+      'success'
+    )
+  }
+}
+
 const addQuestion = async () => {
   try {
     await questionsStore.add(newQuestion.value)
@@ -307,8 +450,7 @@ const addQuestion = async () => {
     newQuestion.value = {
       text: '',
       category: 'General',
-      type: 'rating',
-      weight: 1
+      type: 'rating'
     }
   } catch (error) {
     console.error('Error adding question:', error)
@@ -350,6 +492,14 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.question-card {
+  transition: all 0.2s ease;
+}
+
+.question-card:hover {
+  transform: translateY(-2px);
 }
 </style>
 

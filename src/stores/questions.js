@@ -30,11 +30,13 @@ export const useQuestionsStore = defineStore('questions', () => {
   const add = async (qData) => {
     loading.value = true
     try {
+      const nextOrder = items.value.length > 0 ? Math.max(...items.value.map(q => q.order || 0)) + 1 : 1
+
       const payload = {
         text: qData.text,
         category: qData.category,
         type: qData.type,
-        order: qData.weight || qData.order || 0 
+        order: nextOrder
       }
 
       const { data, error: err } = await supabase
@@ -65,6 +67,37 @@ export const useQuestionsStore = defineStore('questions', () => {
       throw e
     }
   }
+
+  const update = async (id, updates) => {
+    loading.value = true
+    try {
+      const payload = {}
+      if (updates.text !== undefined) payload.text = updates.text
+      if (updates.category !== undefined) payload.category = updates.category
+      if (updates.type !== undefined) payload.type = updates.type
+      if (updates.order !== undefined || updates.weight !== undefined) {
+        payload.order = updates.order || updates.weight || 0
+      }
+
+      const { data, error: err } = await supabase
+        .from('questions')
+        .update(payload)
+        .eq('id', id)
+        .select()
+
+      if (err) throw err
+
+      const index = items.value.findIndex(q => q.id === id)
+      if (index !== -1 && data.length) {
+        items.value[index] = { ...items.value[index], ...data[0] }
+      }
+    } catch (e) {
+      console.error('Update question error:', e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
   
-  return { all, loading, error, fetchAll, add, remove }
+  return { all, loading, error, fetchAll, add, remove, update }
 })
