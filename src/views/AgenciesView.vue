@@ -119,6 +119,14 @@
                     <span>🔗</span>
                     <span class="text-xs">نسخ</span>
                   </button>
+                  <button
+                    @click="copyMessage(agency)"
+                    class="group flex items-center gap-2 text-gray-400 hover:text-white bg-gray-900/50 hover:bg-purple-600 p-2 rounded-lg transition text-sm border border-gray-600 hover:border-purple-500"
+                    title="نسخ رسالة الدعوة"
+                  >
+                    <span>📝</span>
+                    <span class="text-xs">رسالة</span>
+                  </button>
                 </div>
               </td>
               <td class="p-4">
@@ -428,6 +436,26 @@ const copyLink = (slug) => {
 
   navigator.clipboard.writeText(link)
   showToast('📋 تم نسخ الرابط!')
+}
+
+const copyMessage = (agency) => {
+  const localLink = `http://localhost:5173/survey/${encodeURIComponent(agency.slug)}`
+  const prodLink = `https://zarda-survey.vercel.app/survey/${encodeURIComponent(agency.slug)}`
+
+  const link = window.location.hostname === 'localhost' ? localLink : prodLink
+
+  const message = `السادة شركاءنا في ${agency.name}، تحية طيبة وبعد،
+
+انطلاقاً من حرصنا الدائم في شركة زردة على تطوير خدماتنا والارتقاء بمستوى التعاون المشترك، نود الاستماع إلى آرائكم وملاحظاتكم القيمة.
+
+لقد أعددنا هذا الاستبيان القصير لتقييم تجربتكم، حيث سيساعدنا رأيكم بشكل مباشر في تحسين جودة ما نقدمه لكم مستقبلاً.
+
+🔗 رابط الاستبيان الخاص بكم: ${link}
+
+شاكرين لكم وقتكم وثقتكم الغالية.`
+
+  navigator.clipboard.writeText(message)
+  showToast('📝 تم نسخ رسالة الدعوة!')
 }
 
 const openLink = (slug) => {
