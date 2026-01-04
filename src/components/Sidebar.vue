@@ -5,6 +5,11 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../supabase'
 
 const router = useRouter()
+const base = import.meta.env.BASE_URL || '/'
+const onImgError = (e) => {
+  const fallback = base + 'zarda_logo.png'
+  if (e?.target && e.target.src !== fallback) e.target.src = fallback
+}
 const isMobile = ref(false)
 const drawerOpen = ref(false)
 
@@ -62,7 +67,7 @@ watch(isMobile, (val) => {
     >
       <div class="p-6 border-b border-gray-700 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="/zarda_logo.png" alt="Zarda" class="h-9 w-9 object-contain" @error="(e) => e.target.src = '/zarda_logo.png'">
+          <img :src="base + 'zarda_logo.png'" alt="Zarda" class="h-9 w-9 object-contain" @error="onImgError">
           <h1 class="text-xl font-bold text-blue-500">Zarda Admin</h1>
         </div>
         <!-- زر إغلاق للجوال -->

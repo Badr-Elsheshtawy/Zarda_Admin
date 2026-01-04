@@ -215,11 +215,14 @@
         </div>
 
         <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl">
-          <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3">
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-3 justify-between">
             <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            آخر الردود
+            <span class="flex items-center gap-3">
+              آخر الردود
+              <router-link to="/responses" class="text-indigo-400 hover:text-indigo-300 text-sm font-semibold">عرض الكل →</router-link>
+            </span>
           </h3>
           <div class="overflow-x-auto">
             <table class="w-full text-white">
@@ -239,7 +242,7 @@
                 <tr v-for="response in filteredRecentResponses" :key="response.id" class="hover:bg-white/5 transition">
                   <td class="p-4">
                     <div class="flex items-center gap-3">
-                      <img :src="response.agencyLogo || '/zarda_logo.png'" @error="$event.target.src = '/zarda_logo.png'" class="w-8 h-8 rounded-lg object-cover" />
+                      <img :src="response.agencyLogo || '/zarda_logo.png'" @error="$event.target.src !== '/zarda_logo.png' && ($event.target.src = '/zarda_logo.png')" class="w-8 h-8 rounded-lg object-cover" />
                       <span>{{ response.agencyName }}</span>
                     </div>
                   </td>
@@ -561,21 +564,48 @@ const doughnutOptions = {
 }
 
 const calculateAverageRating = (response) => {
-  if (!response.answers || !Array.isArray(response.answers)) {
-    console.log('No answers array for response:', response.id)
-    return 0
-  }
-  const ratings = response.answers
-    .map(answer => {
-      console.log('Answer:', answer, 'Rating:', answer.rating)
-      return answer.rating
-    })
-    .filter(rating => rating !== null && rating !== undefined && rating !== 0 && rating > 0)
+  if (!response || response.answers == null) return 0
 
-  console.log('Filtered ratings for response', response.id, ':', ratings)
-  const avg = ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0
-  console.log('Average rating for response', response.id, ':', avg)
-  return avg
+  // If answers came as a JSON string, try to parse
+  let raw = response.answers
+  if (typeof raw === 'string') {
+    try {
+      raw = JSON.parse(raw)
+    } catch (e) {
+      return 0
+    }
+  }
+
+  // Normalize answers to an array of possible rating entries
+  const answersArray = Array.isArray(raw)
+    ? raw
+    : (raw && typeof raw === 'object')
+      ? Object.entries(raw).map(([questionId, ans]) => {
+          if (ans && typeof ans === 'object') return { questionId, ...ans }
+          return { questionId, rating: ans }
+        })
+      : []
+
+  const ratings = answersArray
+    .map(a => {
+      // Prefer explicit rating field
+      if (a && a.rating !== undefined && a.rating !== null) {
+        const n = Number(a.rating)
+        return Number.isFinite(n) ? n : null
+      }
+      // Fallback: numeric primitive or numeric string as answer
+      if (typeof a === 'number') return a
+      if (typeof a === 'string') {
+        const n = Number(a.trim())
+        return Number.isFinite(n) ? n : null
+      }
+      return null
+    })
+    .filter(n => n !== null && n > 0)
+
+  if (!ratings.length) return 0
+  const sum = ratings.reduce((acc, n) => acc + n, 0)
+  return sum / ratings.length
 }
 
 const calculateNPS = (responses) => {

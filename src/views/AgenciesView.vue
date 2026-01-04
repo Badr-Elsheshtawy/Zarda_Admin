@@ -48,6 +48,7 @@
         <table class="w-full text-white">
           <thead class="bg-gray-900/50 text-gray-400 text-sm uppercase">
             <tr>
+              <th class="text-right p-4">حالة الإرسال</th>
               <th class="text-right p-4">الوكالة</th>
               <th class="text-right p-4">نسبة الإنجاز</th>
               <th class="text-right p-4">الردود</th>
@@ -61,13 +62,26 @@
               :key="agency.id"
               class="hover:bg-gray-700/30 transition duration-150"
             >
+              <td class="p-4 align-middle">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    :checked="!!agency.surveySent"
+                    @change="toggleSent(agency, $event.target.checked)"
+                    class="accent-green-500 w-5 h-5"
+                  />
+                  <span class="text-xs" :class="agency.surveySent ? 'text-green-400' : 'text-gray-400'">
+                    {{ agency.surveySent ? 'تم الإرسال' : 'لم يُرسل بعد' }}
+                  </span>
+                </label>
+              </td>
               <td class="p-4">
                 <div class="flex items-center gap-3">
                   <div class="relative">
                     <img
-                      :src="agency.logoUrl || '/placeholder-logo.png'"
+                      :src="agency.logoUrl || (base + 'zarda_logo.png')"
                       class="w-12 h-12 rounded-lg object-cover bg-gray-900 border border-gray-600"
-                      @error="$event.target.src = '/zarda_logo.png'"
+                      @error="onImgError"
                     />
                   </div>
                   <div>
@@ -99,7 +113,7 @@
                       : 'bg-gray-700 text-gray-300'
                   "
                 >
-                  {{ agency.currentResponses }} / {{ agency.targetEmployees }}
+                  {{ agency.currentResponses }} / {{ agency.target_employees }}
                 </span>
               </td>
               <td class="p-4">
@@ -188,7 +202,7 @@
                 >عدد الموظفين المستهدف</label
               >
               <input
-                v-model="agencyForm.targetEmployees"
+                v-model="agencyForm.target_employees"
                 type="number"
                 min="1"
                 class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:border-blue-500 outline-none transition"
@@ -259,6 +273,11 @@ import { supabase } from '@/supabase'
 import PageHeader from '@/components/PageHeader.vue'
 
 const agenciesStore = useAgenciesStore()
+const base = import.meta.env.BASE_URL || '/'
+const onImgError = (e) => {
+  const fallback = base + 'zarda_logo.png'
+  if (e?.target && e.target.src !== fallback) e.target.src = fallback
+}
 const responsesStore = useResponsesStore()
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -270,13 +289,13 @@ const toastMsg = ref('')
 const imageError = ref('') 
 const searchQuery = ref('')
 
-const agencyForm = ref({ name: '', targetEmployees: '', logoUrl: '', slug: '' })
+const agencyForm = ref({ name: '', target_employees: '', logoUrl: '', slug: '' })
 const editingAgency = ref(null)
 
 const agenciesWithResponses = computed(() => {
   let agencies = agenciesStore.all.map((agency) => {
     const responses = responsesStore.all.filter((r) => r.agencyId === agency.id || r.agency_id === agency.id).length
-    const target = agency.targetEmployees || 1
+    const target = agency.target_employees || 1
     return {
       ...agency,
       currentResponses: responses,
@@ -306,6 +325,16 @@ const getProgressColor = (rate) => {
   if (rate >= 100) return 'bg-green-500'
   if (rate >= 50) return 'bg-blue-500'
   return 'bg-yellow-500'
+}
+
+const toggleSent = async (agency, value) => {
+  try {
+    await agenciesStore.update(agency.id, { surveySent: !!value })
+    agency.surveySent = !!value
+  } catch (e) {
+    alert('تعذّر تحديث حالة الإرسال')
+    console.error(e)
+  }
 }
 
 const handleFileChange = async (event) => {
@@ -388,7 +417,7 @@ const saveAgency = async () => {
 
     const data = {
       name: agencyForm.value.name,
-      targetEmployees: agencyForm.value.targetEmployees,
+      target_employees: agencyForm.value.target_employees,
       logoUrl,
       slug: showEditModal.value ? agencyForm.value.slug : generateSlug(agencyForm.value.name),
     }
@@ -430,7 +459,7 @@ const deleteAgency = async (agency) => {
 
 const copyLink = (slug) => {
   const localLink = `http://localhost:5173/survey/${encodeURIComponent(slug)}`
-  const prodLink = `https://zarda-survey.vercel.app/survey/${encodeURIComponent(slug)}`
+  const prodLink = `https://zarda-survey.vercel.app/${encodeURIComponent(slug)}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 
@@ -440,7 +469,7 @@ const copyLink = (slug) => {
 
 const copyMessage = (agency) => {
   const localLink = `http://localhost:5173/survey/${encodeURIComponent(agency.slug)}`
-  const prodLink = `https://zarda-survey.vercel.app/survey/${encodeURIComponent(agency.slug)}`
+  const prodLink = `https://zarda-survey.vercel.app/${encodeURIComponent(agency.slug)}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 
@@ -460,7 +489,7 @@ const copyMessage = (agency) => {
 
 const openLink = (slug) => {
   const localLink = `http://localhost:5173/survey/${slug}`
-  const prodLink = `https://zarda-survey.vercel.app/survey/${slug}`
+  const prodLink = `https://zarda-survey.vercel.app/${slug}`
 
   const link = window.location.hostname === 'localhost' ? localLink : prodLink
 
@@ -476,7 +505,7 @@ const showToast = (msg) => {
 const closeModal = () => {
   showAddModal.value = false
   showEditModal.value = false
-  agencyForm.value = { name: '', targetEmployees: '', logoUrl: '', slug: '' }
+  agencyForm.value = { name: '', target_employees: '', logoUrl: '', slug: '' }
   previewUrl.value = ''
   selectedFile.value = null
   editingAgency.value = null

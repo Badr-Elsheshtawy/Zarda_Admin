@@ -1,9 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { supabase } from '../supabase'
 import LoginView from '../views/LoginView.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory('/admin/'),
   routes: [
     {
       path: '/login',
@@ -51,6 +51,11 @@ const router = createRouter({
           path: 'survey-stats',
           name: 'survey-stats',
           component: () => import('../views/SurveyStatsView.vue')
+        },
+        {
+          path: 'responses',
+          name: 'responses',
+          component: () => import('../views/ResponsesView.vue')
         }
       ]
     }

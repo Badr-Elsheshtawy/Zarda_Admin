@@ -1,15 +1,15 @@
 <script setup>
+import { ref, onMounted, computed, reactive } from 'vue'
+import { supabase } from '../supabase'
+import { useAdminPackagesStore } from '@/stores/packages'
+import PageHeader from '@/components/PageHeader.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import Modal from '@/components/Modal.vue'
 
 const isAddOpen = ref(false)
 function closeAdd() {
   isAddOpen.value = false
 }
-import { ref, onMounted, computed } from 'vue'
-import { supabase } from '../supabase'
-import { useAdminPackagesStore } from '@/stores/packages'
- import PageHeader from '@/components/PageHeader.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import Modal from '@/components/Modal.vue'
 
 
 const isLoggedIn = ref(false)
@@ -18,8 +18,8 @@ const loginPassword = ref('')
 const loginError = ref('')
 const checkingAuth = ref(true)
 
-const form = ref({
-  title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', isFeatured: false, active: true
+const form = reactive({
+  title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', is_featured: false, active: true
 })
 const imageFiles = ref([])
 const imageUrls = ref([])
@@ -31,7 +31,7 @@ const store = useAdminPackagesStore()
 const isEditOpen = ref(false)
 const editingId = ref(null)
 const editForm = ref({
-  title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', isFeatured: false, active: true, image: ''
+  title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', is_featured: false, active: true, image: ''
 })
 const primaryEditIndex = ref(0)
 
@@ -65,7 +65,7 @@ const displayedPackages = computed(() => {
   }
 
   if (filterFeatured.value) {
-    list = list.filter(p => !!p.isFeatured)
+    list = list.filter(p => !!p.is_featured)
   }
 
   if (filterActive.value !== '') {
@@ -167,6 +167,46 @@ const handleFileSelect = (event) => {
   }
 }
 
+const uploadToSupabase = async (file, bucket = 'packages') => {
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath)
+
+    return data.publicUrl
+  } catch (error) {
+    console.error('Upload Error:', error.message)
+    throw new Error('فشل رفع الصورة')
+  }
+}
+
+const deleteFromSupabase = async (url, bucket = 'packages') => {
+  try {
+    // استخراج اسم الملف من الـ URL
+    const urlParts = url.split('/')
+    const fileName = urlParts[urlParts.length - 1]
+    
+    const { error } = await supabase.storage
+      .from(bucket)
+      .remove([fileName])
+
+    if (error) throw error
+  } catch (error) {
+    console.error('Delete Error:', error.message)
+    // لا نرمي خطأ هنا لأن الحذف قد يفشل إذا كان الملف غير موجود
+  }
+}
+
 const removeImage = (index) => {
   imageFiles.value.splice(index, 1)
   imageUrls.value.splice(index, 1)
@@ -190,7 +230,23 @@ const fetchPackages = async () => { await store.fetchAll({ force: true }) }
 
 const deletePackage = async (id) => {
   if(!confirm('هل أنت متأكد من حذف العرض؟')) return
-  await store.remove(id)
+  
+  try {
+    // العثور على البيانات للحصول على URLs الصور
+    const pkg = store.all.find(p => p.id === id)
+    if (pkg && pkg.images && Array.isArray(pkg.images)) {
+      // حذف الصور من Storage
+      for (const imageUrl of pkg.images) {
+        await deleteFromSupabase(imageUrl, 'packages')
+      }
+    }
+    
+    // حذف البيانات من قاعدة البيانات
+    await store.remove(id)
+  } catch (error) {
+    console.error('خطأ في حذف العرض:', error)
+    alert('فشل في حذف العرض')
+  }
 }
 
 const toggleActive = async (pkg) => {
@@ -213,52 +269,105 @@ const openEdit = (pkg) => {
     category: pkg.category || 'سياحة',
     destination: pkg.destination || '',
     description: pkg.description || '',
-    isFeatured: !!pkg.isFeatured,
+    is_featured: !!pkg.is_featured,
     active: typeof pkg.active === 'boolean' ? pkg.active : true,
     image: pkg.image || ''
   }
-  imageFiles.value = []
+  imageFiles.value = [] // لا نحتاج ملفات للصور الموجودة
   imageUrls.value = Array.isArray(pkg.images) && pkg.images.length ? [...pkg.images] : (pkg.image ? [pkg.image] : [])
   const idx = imageUrls.value.findIndex(u => u === (pkg.image || ''))
   primaryEditIndex.value = idx !== -1 ? idx : 0
 }
 
- 
+const saveEdit = async () => {
+  loading.value = true
+  message.value = ''
+  try {
+    // رفع الصور الجديدة
+    const uploadedUrls = [...imageUrls.value] // ابدأ بالـ URLs الحالية
+    for (let i = 0; i < imageFiles.value.length; i++) {
+      if (!uploadedUrls[i] || uploadedUrls[i].startsWith('blob:')) {
+        // إذا كانت جديدة، ارفعها
+        const url = await uploadToSupabase(imageFiles.value[i], 'packages')
+        uploadedUrls[i] = url
+      }
+    }
+
+    const primaryUrl = uploadedUrls.length > 0 ? uploadedUrls[primaryEditIndex.value] : ''
+    const otherUrls = uploadedUrls.filter((_, i) => i !== primaryEditIndex.value)
+    const orderedImages = primaryUrl ? [primaryUrl, ...otherUrls] : []
+
+    const pkg = {
+      title: editForm.value.title,
+      price: Number(editForm.value.price),
+      currency: editForm.value.currency,
+      category: editForm.value.category,
+      destination: editForm.value.destination,
+      description: editForm.value.description,
+      is_featured: editForm.value.is_featured,
+      active: editForm.value.active,
+      image: primaryUrl,
+      images: orderedImages
+    }
+    await store.update(editingId.value, pkg)
+    message.value = '✅ تم حفظ التعديلات بنجاح!'
+    setTimeout(() => {
+      isEditOpen.value = false
+    }, 2000)
+  } catch (e) {
+    message.value = '❌ فشل في حفظ التعديلات'
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
 
 const openAdd = () => {
   isAddOpen.value = true
-  form.value = { title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', isFeatured: false, active: true }
+  Object.assign(form, { title: '', price: '', currency: 'USD', category: 'سياحة', destination: '', description: '', is_featured: false, active: true })
   imageFiles.value = []
   imageUrls.value = []
   message.value = ''
 }
 
-const exportData = () => {
-  const data = store.all.map(pkg => ({
-    title: pkg.title,
-    price: pkg.price,
-    currency: pkg.currency,
-    category: pkg.category,
-    destination: pkg.destination,
-    description: pkg.description,
-    isFeatured: pkg.isFeatured,
-    active: pkg.active,
-    views: pkg.views || 0,
-    createdAt: pkg.createdAt?.toDate?.() || new Date()
-  }))
-  
-  const csv = [
-    Object.keys(data[0]).join(','),
-    ...data.map(row => Object.values(row).map(val => `"${val}"`).join(','))
-  ].join('\n')
-  
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `packages-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  window.URL.revokeObjectURL(url)
+const addPackage = async () => {
+  loading.value = true
+  message.value = ''
+  try {
+    // رفع الصور أولاً
+    const uploadedUrls = []
+    for (const file of imageFiles.value) {
+      const url = await uploadToSupabase(file, 'packages')
+      uploadedUrls.push(url)
+    }
+
+    const primaryUrl = uploadedUrls.length > 0 ? uploadedUrls[primaryImageIndex.value] : ''
+    const otherUrls = uploadedUrls.filter((_, i) => i !== primaryImageIndex.value)
+    const orderedImages = primaryUrl ? [primaryUrl, ...otherUrls] : []
+
+    const pkg = {
+      title: form.title,
+      price: Number(form.price),
+      currency: form.currency,
+      category: form.category,
+      destination: form.destination,
+      description: form.description,
+      is_featured: form.is_featured,
+      active: form.active,
+      image: primaryUrl,
+      images: orderedImages
+    }
+    await store.add(pkg)
+    message.value = '✅ تم نشر العرض بنجاح!'
+    setTimeout(() => {
+      closeAdd()
+    }, 2000)
+  } catch (e) {
+    message.value = '❌ فشل في نشر العرض'
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
 }
 
 const clearFilters = () => {
@@ -284,7 +393,7 @@ const clearFilters = () => {
       <div class="bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl w-full max-w-md overflow-hidden">
         <div class="p-8 border-b border-white/20">
           <div class="text-center mb-8">
-            <img src="/zarda_logo.png" alt="Zarda" class="mx-auto h-16 w-auto mb-4" @error="(e) => e.target.src = '/zarda_logo.png'">
+            <img src="/zarda_logo.png" alt="Zarda" class="mx-auto h-16 w-auto mb-4" @error="$event.target.src !== '/zarda_logo.png' && ($event.target.src = '/zarda_logo.png')">
             <h1 class="text-3xl font-bold text-white mb-2">Zarda Admin</h1>
             <p class="text-slate-300">لوحة التحكم الإدارية</p>
           </div>
@@ -350,15 +459,6 @@ const clearFilters = () => {
           <template #title>إدارة العروض</template>
           <template #subtitle>إدارة العروض السياحية والحجوزات</template>
           <template #actions>
-            <button
-              @click="exportData"
-              class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 flex items-center gap-3 font-semibold transform hover:scale-105"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              تصدير البيانات
-            </button>
             <button
               @click="openAdd"
               class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all duration-300 flex items-center gap-3 font-semibold transform hover:scale-105"
@@ -452,6 +552,101 @@ const clearFilters = () => {
             </template>
             <template #title>إضافة عرض جديد</template>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="col-span-2">
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                  </svg>
+                  العنوان
+                </label>
+                <input v-model="form.title" type="text" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 placeholder-slate-400" placeholder="أدخل عنوان العرض">
+              </div>
+              <div>
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                  السعر
+                </label>
+                <input v-model="form.price" type="number" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 placeholder-slate-400" placeholder="أدخل السعر">
+              </div>
+              <div>
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                  العملة
+                </label>
+                <select v-model="form.currency" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 [&>option]:bg-slate-800 [&>option]:text-white [&>option:hover]:bg-slate-700">
+                  <option value="USD">دولار أمريكي (USD)</option>
+                  <option value="EUR">يورو (EUR)</option>
+                  <option value="LYD">دينار ليبي (LYD)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                  </svg>
+                  الوجهة
+                </label>
+                <input v-model="form.destination" type="text" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 placeholder-slate-400" placeholder="مثال: تركيا، مصر، الإمارات">
+              </div>
+              <div class="md:col-span-3">
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                  </svg>
+                  الوصف
+                </label>
+                <textarea v-model="form.description" rows="3" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 placeholder-slate-400" placeholder="أدخل وصف العرض"></textarea>
+              </div>
+              <div>
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  مميز
+                </label>
+                <input type="checkbox" v-model="form.is_featured" class="accent-yellow-500 w-5 h-5">
+              </div>
+              <div>
+                <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                  مفعل
+                </label>
+                <input type="checkbox" v-model="form.active" class="accent-green-500 w-5 h-5">
+              </div>
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-slate-200 text-sm font-semibold mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                الصور
+              </label>
+              <div class="bg-white/5 border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-blue-400/50 transition-colors cursor-pointer" @click="$refs.imageInput.click()">
+                <svg class="w-12 h-12 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <p class="text-slate-300 mb-2">اضغط لاختيار صور</p>
+                <p class="text-slate-400 text-sm">يمكنك رفع عدة صور، والصورة الأولى ستكون الأساسية</p>
+                <input ref="imageInput" type="file" multiple @change="handleFileSelect" class="hidden" accept="image/*">
+              </div>
+              <div v-if="imageUrls.length" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div v-for="(u,i) in imageUrls" :key="i" class="relative group">
+                  <img :src="u" @error="$event.target.src !== '/zarda_logo.png' && ($event.target.src = '/zarda_logo.png')" class="w-full h-24 object-cover rounded-xl border-2 transition-all duration-200" :class="primaryImageIndex === i ? 'border-blue-400 ring-2 ring-blue-400/30' : 'border-white/20 group-hover:border-white/40'">
+                  <button @click="removeImage(i)" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 w-6 h-6 rounded-full text-white text-xs font-bold transition-colors opacity-0 group-hover:opacity-100">×</button>
+                  <div v-if="primaryImageIndex === i" class="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-lg font-semibold">
+                    الصورة الأساسية
+                  </div>
+                  <button v-else @click="primaryImageIndex = i" class="absolute bottom-2 left-2 bg-black/60 hover:bg-black/80 text-white text-xs px-2 py-1 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                    اجعلها أساسية
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="mt-8 flex gap-4">
               <button @click="addPackage" :disabled="loading" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-3">
@@ -483,8 +678,8 @@ const clearFilters = () => {
         <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div v-for="pkg in displayedPackages" :key="pkg.id" class="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl overflow-hidden hover:shadow-blue-500/10 transition-all duration-300 group">
             <div class="relative">
-              <img :src="pkg.image || '/zarda_logo.png'" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-48 object-cover bg-slate-800">
-              <div v-if="pkg.isFeatured" class="absolute top-4 right-4 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+              <img :src="pkg.image || '/zarda_logo.png'" @error="$event.target.src !== '/zarda_logo.png' && ($event.target.src = '/zarda_logo.png')" class="w-full h-48 object-cover bg-slate-800">
+              <div v-if="pkg.is_featured" class="absolute top-4 right-4 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
                 </svg>
@@ -518,7 +713,7 @@ const clearFilters = () => {
 
               <div class="flex items-center justify-between mb-4">
                 <div class="text-2xl font-bold text-green-400">
-                  {{ pkg.price }} {{ pkg.currency || 'USD' }}
+                  {{ pkg.price }} {{ pkg.currency || 'د.ل' }}
                 </div>
                 <div class="text-sm text-slate-400">
                   {{ pkg.views || 0 }} مشاهدة
@@ -585,9 +780,10 @@ const clearFilters = () => {
                     </svg>
                     العملة
                   </label>
-                  <select v-model="editForm.currency" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200">
-                    <option value="USD" class="bg-slate-800">دولار أمريكي</option>
-                    <option value="LYD" class="bg-slate-800">دينار ليبي</option>
+                  <select v-model="editForm.currency" class="w-full bg-white/10 border border-white/20 text-white rounded-xl p-4 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 outline-none transition-all duration-200 [&>option]:bg-slate-800 [&>option]:text-white [&>option:hover]:bg-slate-700">
+                    <option value="USD">دولار أمريكي (USD)</option>
+                    <option value="EUR">يورو (EUR)</option>
+                    <option value="LYD">دينار ليبي (LYD)</option>
                   </select>
                 </div>
                 <div>
@@ -639,7 +835,7 @@ const clearFilters = () => {
                   </div>
                   <div v-if="imageUrls.length" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div v-for="(u,i) in imageUrls" :key="i" class="relative group">
-                      <img :src="u" @error="(e) => e.target.src = '/zarda_logo.png'" class="w-full h-24 object-cover rounded-xl border-2 transition-all duration-200" :class="primaryEditIndex === i ? 'border-blue-400 ring-2 ring-blue-400/30' : 'border-white/20 group-hover:border-white/40'">
+                      <img :src="u" @error="$event.target.src !== '/zarda_logo.png' && ($event.target.src = '/zarda_logo.png')" class="w-full h-24 object-cover rounded-xl border-2 transition-all duration-200" :class="primaryEditIndex === i ? 'border-blue-400 ring-2 ring-blue-400/30' : 'border-white/20 group-hover:border-white/40'">
                       <button @click="removeImage(i)" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 w-6 h-6 rounded-full text-white text-xs font-bold transition-colors opacity-0 group-hover:opacity-100">×</button>
                       <div v-if="primaryEditIndex === i" class="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-lg font-semibold">
                         الصورة الأساسية
@@ -652,7 +848,7 @@ const clearFilters = () => {
                 </div>
                 <div class="md:col-span-3 flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                   <label class="flex items-center gap-3 cursor-pointer">
-                    <input v-model="editForm.isFeatured" type="checkbox" class="accent-yellow-500 w-5 h-5">
+                    <input v-model="editForm.is_featured" type="checkbox" class="accent-yellow-500 w-5 h-5">
                     <div class="flex items-center gap-2">
                       <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>

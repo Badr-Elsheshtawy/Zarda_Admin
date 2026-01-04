@@ -8,6 +8,11 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false) 
 const router = useRouter()
+const base = import.meta.env.BASE_URL || '/'
+const onImgError = (e) => {
+  const fallback = base + 'zarda_logo.png'
+  if (e?.target && e.target.src !== fallback) e.target.src = fallback
+}
 
 const handleLogin = async () => {
   loading.value = true
@@ -37,7 +42,7 @@ const handleLogin = async () => {
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center items-center p-4">
     <div class="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/20">
       <div class="text-center mb-8">
-        <img src="/zarda_logo.png" alt="Zarda" class="mx-auto h-16 w-auto mb-3" @error="(e) => e.target.src = '/zarda_logo.png'">
+        <img :src="base + 'zarda_logo.png'" alt="Zarda" class="mx-auto h-16 w-auto mb-3" @error="onImgError">
         <h1 class="text-3xl font-bold text-white">Zarda Admin</h1>
         <p class="text-slate-300 mt-2">لوحة التحكم</p>
       </div>

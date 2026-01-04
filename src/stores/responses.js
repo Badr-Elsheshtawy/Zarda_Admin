@@ -1,37 +1,65 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { supabase } from '@/supabase'
 
 export const useResponsesStore = defineStore('responses', () => {
-  const items = ref([])
+  const all = ref([])
   const loading = ref(false)
   const error = ref(null)
 
-  const all = computed(() => items.value)
-
-  const fetchAll = async () => {
+  const fetchAll = async ({ force = false } = {}) => {
     loading.value = true
+    console.log("1. بدء عملية جلب البيانات...") // تتبع
+
     try {
+      // محاولة جلب البيانات البسيطة أولاً للتأكد من الجدول
       const { data, error: err } = await supabase
         .from('responses')
         .select(`
           *,
-          agencies!inner(name, logo_url)
-        `) 
+          agencies:agency_id (name, logo_url)
+        `)
         .order('created_at', { ascending: false })
 
-      if (err) throw err
+      if (err) {
+        console.error("❌ خطأ من Supabase:", err) // سيظهر هذا الخطأ في الكونسول
+        throw err
+      }
+
+      console.log("✅ البيانات الخام من القاعدة:", data) // لنرى ماذا عاد من القاعدة
+
+      if (!data || data.length === 0) {
+        console.warn("⚠️ الطلب نجح لكن المصفوفة فارغة! تأكد من وجود بيانات في الجدول وتأكد من سياسات RLS")
+      }
+
+      all.value = data.map(r => {
+        let parsedAnswers = []
+        // معالجة الإجابات
+        if (r.answers) {
+            if (typeof r.answers === 'string') {
+                try {
+                    parsedAnswers = JSON.parse(r.answers)
+                } catch (e) {
+                    console.error("خطأ في تحليل JSON للرد رقم:", r.id, e)
+                }
+            } else {
+                parsedAnswers = r.answers
+            }
+        }
+        
+        return {
+          ...r,
+          agencyName: r.agencies?.name || 'غير معروف',
+          agencyLogo: r.agencies?.logo_url || '',
+          answers: parsedAnswers
+        }
+      })
       
-      items.value = data.map(r => ({
-        ...r,
-        agencyName: r.agencies?.name || 'غير معروف',
-        agencyLogo: r.agencies?.logo_url || '',
-        finalNps: r.final_nps,
-        createdAt: r.created_at
-      }))
+      console.log("✅ البيانات النهائية في المتجر:", all.value)
+
     } catch (e) {
-      console.error(e)
-      error.value = 'تعذر جلب الردود'
+      console.error('Error fetching responses:', e)
+      error.value = e.message
     } finally {
       loading.value = false
     }

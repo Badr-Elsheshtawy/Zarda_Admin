@@ -46,5 +46,24 @@ export const useAdminPackagesStore = defineStore('adminPackages', () => {
     if (item) item.active = newState
   }
 
-  return { items, all, loading, fetchAll, add, remove, toggleActive }
+  const update = async (id, pkg) => {
+    loading.value = true
+    try {
+      const { data, error } = await supabase
+        .from('packages')
+        .update(pkg)
+        .eq('id', id)
+        .select()
+      if (error) throw error
+      const index = items.value.findIndex(p => p.id === id)
+      if (index !== -1) items.value[index] = data[0]
+    } catch (e) {
+      console.error(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { items, all, loading, fetchAll, add, remove, toggleActive, update }
 })

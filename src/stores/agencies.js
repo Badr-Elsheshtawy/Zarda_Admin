@@ -15,9 +15,10 @@ export const useAgenciesStore = defineStore('agencies', () => {
     id: data.id,
     name: data.name,
     slug: data.slug,
-    targetEmployees: data.target_employees,
+    targetEmployees: Number(data.target_employees),
     logoUrl: data.logo_url,
-    createdAt: data.created_at
+    createdAt: data.created_at,
+    surveySent: !!data.survey_sent
   })
 
   const getFilePathFromUrl = (url) => {
@@ -54,8 +55,9 @@ export const useAgenciesStore = defineStore('agencies', () => {
         .insert([{
             name: agencyData.name,
             slug: agencyData.slug,
-            target_employees: agencyData.targetEmployees,
-            logo_url: agencyData.logoUrl
+            target_employees: Number(agencyData.targetEmployees),
+            logo_url: agencyData.logoUrl,
+            survey_sent: !!agencyData.surveySent
           }])
         .select()
 
@@ -90,9 +92,10 @@ export const useAgenciesStore = defineStore('agencies', () => {
 
       const dbUpdates = {}
       if (updates.name) dbUpdates.name = updates.name
-      if (updates.targetEmployees) dbUpdates.target_employees = updates.targetEmployees
+      if (updates.targetEmployees) dbUpdates.target_employees = Number(updates.targetEmployees)
       if (updates.logoUrl) dbUpdates.logo_url = updates.logoUrl
       if (updates.slug) dbUpdates.slug = updates.slug
+      if (typeof updates.surveySent === 'boolean') dbUpdates.survey_sent = updates.surveySent
 
       const { data, error: err } = await supabase
         .from('agencies')

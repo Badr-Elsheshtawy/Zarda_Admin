@@ -100,8 +100,8 @@
             >
               <div class="flex items-start gap-4">
                 <img
-                  :src="pkg.imageUrl || '/zarda_logo.png'"
-                  @error="$event.target.src = '/zarda_logo.png'"
+                  :src="pkg.imageUrl || (base + 'zarda_logo.png')"
+                  @error="onImgError"
                   class="w-16 h-16 rounded-lg object-cover border border-white/20"
                 />
                 <div class="flex-1">
@@ -175,6 +175,11 @@ import { useResponsesStore } from '@/stores/responses'
 const packagesStore = useAdminPackagesStore()
 const statsStore = useStatsStore()
 const responsesStore = useResponsesStore()
+const base = import.meta.env.BASE_URL || '/'
+const onImgError = (e) => {
+  const fallback = base + 'zarda_logo.png'
+  if (e?.target && e.target.src !== fallback) e.target.src = fallback
+}
 
 const loading = ref(true)
 
