@@ -66,6 +66,11 @@ export const useSurveyStore = defineStore('survey', () => {
   const submitSurvey = async () => {
     loading.value = true
     try {
+      const npsQuestion = questions.value.find(q => q.category === 'NPS' || q.text.toLowerCase().includes('nps'))
+      if (npsQuestion) {
+        npsScore.value = answers.value[npsQuestion.id]?.rating || null
+      }
+
       const formattedAnswers = questions.value.map(q => ({
         questionId: q.id,
         question: q.text,

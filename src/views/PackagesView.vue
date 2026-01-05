@@ -192,7 +192,6 @@ const uploadToSupabase = async (file, bucket = 'packages') => {
 
 const deleteFromSupabase = async (url, bucket = 'packages') => {
   try {
-    // استخراج اسم الملف من الـ URL
     const urlParts = url.split('/')
     const fileName = urlParts[urlParts.length - 1]
     
@@ -203,7 +202,6 @@ const deleteFromSupabase = async (url, bucket = 'packages') => {
     if (error) throw error
   } catch (error) {
     console.error('Delete Error:', error.message)
-    // لا نرمي خطأ هنا لأن الحذف قد يفشل إذا كان الملف غير موجود
   }
 }
 
@@ -232,16 +230,13 @@ const deletePackage = async (id) => {
   if(!confirm('هل أنت متأكد من حذف العرض؟')) return
   
   try {
-    // العثور على البيانات للحصول على URLs الصور
     const pkg = store.all.find(p => p.id === id)
     if (pkg && pkg.images && Array.isArray(pkg.images)) {
-      // حذف الصور من Storage
       for (const imageUrl of pkg.images) {
         await deleteFromSupabase(imageUrl, 'packages')
       }
     }
     
-    // حذف البيانات من قاعدة البيانات
     await store.remove(id)
   } catch (error) {
     console.error('خطأ في حذف العرض:', error)
@@ -273,7 +268,7 @@ const openEdit = (pkg) => {
     active: typeof pkg.active === 'boolean' ? pkg.active : true,
     image: pkg.image || ''
   }
-  imageFiles.value = [] // لا نحتاج ملفات للصور الموجودة
+  imageFiles.value = [] 
   imageUrls.value = Array.isArray(pkg.images) && pkg.images.length ? [...pkg.images] : (pkg.image ? [pkg.image] : [])
   const idx = imageUrls.value.findIndex(u => u === (pkg.image || ''))
   primaryEditIndex.value = idx !== -1 ? idx : 0
@@ -283,11 +278,9 @@ const saveEdit = async () => {
   loading.value = true
   message.value = ''
   try {
-    // رفع الصور الجديدة
-    const uploadedUrls = [...imageUrls.value] // ابدأ بالـ URLs الحالية
+    const uploadedUrls = [...imageUrls.value] 
     for (let i = 0; i < imageFiles.value.length; i++) {
       if (!uploadedUrls[i] || uploadedUrls[i].startsWith('blob:')) {
-        // إذا كانت جديدة، ارفعها
         const url = await uploadToSupabase(imageFiles.value[i], 'packages')
         uploadedUrls[i] = url
       }
@@ -334,7 +327,6 @@ const addPackage = async () => {
   loading.value = true
   message.value = ''
   try {
-    // رفع الصور أولاً
     const uploadedUrls = []
     for (const file of imageFiles.value) {
       const url = await uploadToSupabase(file, 'packages')

@@ -28,7 +28,7 @@
 
       <div v-else class="space-y-8">
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6">
           <StatCard>
             <template #icon>
               <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,6 +68,26 @@
             <template #label>NPS (مؤشر رضا العملاء)</template>
             <template #value>{{ stats.npsScore }}</template>
             <template #subtitle>النسبة بين الراضين والمنتقدين</template>
+          </StatCard>
+          <StatCard>
+            <template #icon>
+              <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"></path>
+              </svg>
+            </template>
+            <template #label>الوكالات المشاركة</template>
+            <template #value>{{ stats.participatingAgencies }}</template>
+            <template #subtitle>عدد الوكالات التي لديها ردود</template>
+          </StatCard>
+          <StatCard>
+            <template #icon>
+              <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h6M7 16h3"></path>
+              </svg>
+            </template>
+            <template #label>الشكاوى</template>
+            <template #value>{{ stats.totalComplaints }}</template>
+            <template #subtitle>عدد الشكاوى المسجلة</template>
           </StatCard>
         </div>
 
@@ -252,9 +272,9 @@
                     <span class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">{{ calculateAverageRating(response).toFixed(1) }}/5</span>
                   </td>
                   <td class="p-4">
-                    <span :class="(response.finalNps || response.nps || 0) >= 9 ? 'bg-green-500/20 text-green-300' : (response.finalNps || response.nps || 0) >= 7 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'" class="px-2 py-1 rounded">
-                      {{ response.finalNps || response.nps || 0 }}
-                    </span>
+                  <span :class="(response.finalNps || response.final_nps || 0) >= 9 ? 'bg-green-500/20 text-green-300' : (response.finalNps || response.final_nps || 0) >= 7 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'" class="px-2 py-1 rounded">
+                    {{ response.finalNps || response.final_nps || 0 }}
+                  </span>
                   </td>
                   <td class="p-4 text-gray-400">{{ formatDate(response.created_at) }}</td>
                   <td class="p-4">
@@ -308,6 +328,36 @@ const responses = computed(() => responsesStore.all)
 const questions = computed(() => questionsStore.all)
 const agencies = computed(() => agenciesStore.all)
 const loading = computed(() => responsesStore.loading || questionsStore.loading || agenciesStore.loading || statsStore.loading)
+
+const ratingQuestionIds = computed(() => {
+  try {
+    return new Set(questions.value.filter(q => q.type === 'rating').map(q => String(q.id)))
+  } catch { return new Set() }
+})
+const ratingQuestionTexts = computed(() => {
+  try {
+    return new Set(questions.value.filter(q => q.type === 'rating').map(q => (q.text || '').trim()))
+  } catch { return new Set() }
+})
+
+const npsQuestionIds = computed(() => {
+  try {
+    return new Set(
+      questions.value
+        .filter(q => String(q.category || '').toLowerCase() === 'nps' || /nps/i.test(String(q.text || '')))
+        .map(q => String(q.id))
+    )
+  } catch { return new Set() }
+})
+const npsQuestionTexts = computed(() => {
+  try {
+    return new Set(
+      questions.value
+        .filter(q => String(q.category || '').toLowerCase() === 'nps' || /nps/i.test(String(q.text || '')))
+        .map(q => (q.text || '').trim())
+    )
+  } catch { return new Set() }
+})
 
 const showResponseModal = ref(false)
 const selectedResponse = ref(null)
@@ -367,13 +417,31 @@ const enrichedResponses = computed(() => {
 const stats = computed(() => {
   const totalResponses = enrichedResponses.value.length
   const averageSatisfaction = totalResponses ? enrichedResponses.value.reduce((acc, r) => acc + calculateAverageRating(r), 0) / totalResponses : 0
-  const completionRate = totalResponses ? Math.round((enrichedResponses.value.filter(r => r.completed !== false).length / totalResponses) * 100) : 0
+
+  const completedCount = enrichedResponses.value.filter(r => {
+    const hasAnswersArray = Array.isArray(r.answers) && r.answers.length > 0
+    const hasAnswersObj = r.answers && typeof r.answers === 'object' && !Array.isArray(r.answers) && Object.keys(r.answers).length > 0
+    const hasNps = (r.finalNps ?? r.final_nps ?? null) !== null
+    return hasAnswersArray || hasAnswersObj || hasNps
+  }).length
+  const completionRate = totalResponses ? Math.round((completedCount / totalResponses) * 100) : 0
+
   const npsScore = calculateNPS(enrichedResponses.value)
+
+  const totalComplaints = enrichedResponses.value.reduce((acc, r) => acc + (r.complaints ? 1 : 0), 0)
+
+  const participatingAgencies = new Set(
+    enrichedResponses.value
+      .map(r => (r.agencyId || r.agency_id) ?? null)
+      .filter(Boolean)
+  ).size
 
   const agencyStats = {}
   enrichedResponses.value.forEach(response => {
     const aId = response.agencyId || response.agency_id
     const aName = response.agencyName
+    
+    if (!aId) return; // skip responses without agency
     
     if (!agencyStats[aId]) {
       agencyStats[aId] = { name: aName, totalRating: 0, count: 0 }
@@ -397,6 +465,8 @@ const stats = computed(() => {
     averageSatisfaction,
     completionRate,
     npsScore,
+    participatingAgencies,
+    totalComplaints,
     topAgencies,
     lowestAgencies
   }
@@ -423,35 +493,32 @@ const ratingDistributionData = computed(() => {
 })
 
 const categorySatisfactionData = computed(() => {
-  const targetCategories = ['تذاكر', 'فنادق / تأشيرات', 'مالية']
   const categoryStats = {}
-  const normalizedTargets = targetCategories.map(cat => cat.trim().toLowerCase())
-  targetCategories.forEach(cat => {
-    categoryStats[cat] = { total: 0, count: 0 }
-  })
-
   enrichedResponses.value.forEach(response => {
-    let category = response.department ? response.department.trim().toLowerCase() : ''
-    const idx = normalizedTargets.indexOf(category)
-    if (idx !== -1) {
-      const realCat = targetCategories[idx]
-      categoryStats[realCat].total += calculateAverageRating(response)
-      categoryStats[realCat].count++
-    }
+    const dep = (response.department || '').trim()
+    if (!dep) return
+    if (!categoryStats[dep]) categoryStats[dep] = { total: 0, count: 0 }
+    categoryStats[dep].total += calculateAverageRating(response)
+    categoryStats[dep].count++
   })
 
-  const labels = Object.keys(categoryStats)
-  const data = labels.map(cat => {
-    const count = categoryStats[cat].count
-    return count > 0 ? (categoryStats[cat].total / count).toFixed(1) : 0
+  const sortedCats = Object.entries(categoryStats)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 5)
+
+  const labels = sortedCats.map(([name]) => name)
+  const data = sortedCats.map(([_, stat]) => {
+    return stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : 0
   })
+
+  const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444']
 
   return {
     labels,
     datasets: [{
       label: 'متوسط الرضا',
       data,
-      backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'],
+      backgroundColor: colors.slice(0, labels.length),
       borderRadius: 8
     }]
   }
@@ -566,7 +633,6 @@ const doughnutOptions = {
 const calculateAverageRating = (response) => {
   if (!response || response.answers == null) return 0
 
-  // If answers came as a JSON string, try to parse
   let raw = response.answers
   if (typeof raw === 'string') {
     try {
@@ -576,7 +642,6 @@ const calculateAverageRating = (response) => {
     }
   }
 
-  // Normalize answers to an array of possible rating entries
   const answersArray = Array.isArray(raw)
     ? raw
     : (raw && typeof raw === 'object')
@@ -586,20 +651,29 @@ const calculateAverageRating = (response) => {
         })
       : []
 
+  const hasRatingQuestions = ratingQuestionIds.value.size > 0 || ratingQuestionTexts.value.size > 0
+
   const ratings = answersArray
     .map(a => {
-      // Prefer explicit rating field
-      if (a && a.rating !== undefined && a.rating !== null) {
-        const n = Number(a.rating)
-        return Number.isFinite(n) ? n : null
+      const qid = a?.questionId != null ? String(a.questionId) : null
+      const qtext = a?.question != null ? String(a.question).trim() : null
+      const isRatingQ = (qid && ratingQuestionIds.value.has(qid)) || (qtext && ratingQuestionTexts.value.has(qtext))
+
+      const candidate = a?.rating ?? a?.value ?? a?.score ?? a?.answer ?? a?.response
+      let n = null
+      if (candidate !== undefined && candidate !== null) {
+        n = Number(candidate)
+      } else if (typeof a === 'number') {
+        n = a
+      } else if (typeof a === 'string') {
+        const m = Number(a.trim())
+        n = Number.isFinite(m) ? m : null
       }
-      // Fallback: numeric primitive or numeric string as answer
-      if (typeof a === 'number') return a
-      if (typeof a === 'string') {
-        const n = Number(a.trim())
-        return Number.isFinite(n) ? n : null
+
+      if (hasRatingQuestions) {
+        return isRatingQ && Number.isFinite(n) ? n : null
       }
-      return null
+      return Number.isFinite(n) ? n : null
     })
     .filter(n => n !== null && n > 0)
 
@@ -610,13 +684,49 @@ const calculateAverageRating = (response) => {
 
 const calculateNPS = (responses) => {
   if (!responses.length) return 0
-  let promoters = 0, detractors = 0
-  responses.forEach(r => {
-    const nps = r.finalNps || r.final_nps || 0
-    if (nps >= 9) promoters++
-    else if (nps <= 6) detractors++
-  })
-  return Math.round(((promoters - detractors) / responses.length) * 100)
+
+  const deriveNpsValue = (r) => {
+    const explicit = r.finalNps ?? r.final_nps
+    if (Number.isFinite(Number(explicit))) return Number(explicit)
+
+    let raw = r.answers
+    if (typeof raw === 'string') {
+      try { raw = JSON.parse(raw) } catch { raw = null }
+    }
+    const answersArray = Array.isArray(raw)
+      ? raw
+      : (raw && typeof raw === 'object')
+        ? Object.entries(raw).map(([questionId, ans]) => {
+            if (ans && typeof ans === 'object') return { questionId, ...ans }
+            return { questionId, rating: ans }
+          })
+        : []
+
+    const npsCandidates = answersArray
+      .map(a => {
+        const qid = a?.questionId != null ? String(a.questionId) : null
+        const qtext = a?.question != null ? String(a.question).trim() : null
+        const isNpsQ = (qid && npsQuestionIds.value.has(qid)) || (qtext && npsQuestionTexts.value.has(qtext))
+        const candidate = a?.rating ?? a?.value ?? a?.score ?? a?.answer ?? a?.response
+        const n = Number(candidate)
+        return isNpsQ && Number.isFinite(n) ? n : null
+      })
+      .filter(v => v !== null)
+    if (npsCandidates.length) {
+      const avg = npsCandidates.reduce((acc, n) => acc + n, 0) / npsCandidates.length
+      return avg <= 5 ? Math.round((avg - 1) * (10 / 4)) : avg
+    }
+
+    const starAvg = calculateAverageRating(r) 
+    if (starAvg > 0) return Math.round((starAvg - 1) * (10 / 4)) 
+    return null
+  }
+
+  const scores = responses.map(deriveNpsValue).filter(v => v !== null)
+  if (!scores.length) return 0
+  const promoters = scores.filter(n => n >= 9).length
+  const detractors = scores.filter(n => n <= 6).length
+  return Math.round(((promoters - detractors) / scores.length) * 100)
 }
 
 const formatDate = (dateStr) => {

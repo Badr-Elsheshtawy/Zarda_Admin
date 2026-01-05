@@ -9,10 +9,8 @@ export const useResponsesStore = defineStore('responses', () => {
 
   const fetchAll = async ({ force = false } = {}) => {
     loading.value = true
-    console.log("1. بدء عملية جلب البيانات...") // تتبع
-
+    console.log("1. بدء عملية جلب البيانات...")
     try {
-      // محاولة جلب البيانات البسيطة أولاً للتأكد من الجدول
       const { data, error: err } = await supabase
         .from('responses')
         .select(`
@@ -22,11 +20,11 @@ export const useResponsesStore = defineStore('responses', () => {
         .order('created_at', { ascending: false })
 
       if (err) {
-        console.error("❌ خطأ من Supabase:", err) // سيظهر هذا الخطأ في الكونسول
+        console.error("❌ خطأ من Supabase:", err) 
         throw err
       }
 
-      console.log("✅ البيانات الخام من القاعدة:", data) // لنرى ماذا عاد من القاعدة
+      console.log("✅ البيانات الخام من القاعدة:", data) 
 
       if (!data || data.length === 0) {
         console.warn("⚠️ الطلب نجح لكن المصفوفة فارغة! تأكد من وجود بيانات في الجدول وتأكد من سياسات RLS")
@@ -34,7 +32,6 @@ export const useResponsesStore = defineStore('responses', () => {
 
       all.value = data.map(r => {
         let parsedAnswers = []
-        // معالجة الإجابات
         if (r.answers) {
             if (typeof r.answers === 'string') {
                 try {
